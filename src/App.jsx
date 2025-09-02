@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { HostelProvider, useHostel } from './contexts/HostelContext';
 import Sidebar from './components/Sidebar/Sidebar';
-import Header from './components/Header/Header';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Tenants from './pages/Tenants/Tenants';
 import Payments from './pages/Payments/Payments';
@@ -21,7 +20,6 @@ function AppContent() {
     <div className="app">
       <Sidebar />
       <div className="main-content">
-        <Header />
         <div className="content-container">
           <Routes>
             <Route path="/" element={

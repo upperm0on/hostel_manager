@@ -18,6 +18,7 @@ import {
   ProgressIndicator,
   NavigationButtons,
   AmenityModal,
+  HostelOverview,
 } from "../../components/SettingsTabs";
 import "./Settings.css";
 
@@ -377,7 +378,7 @@ const Settings = () => {
     );
   }
 
-  // If hostel info exists, show current settings
+  // If hostel info exists, show comprehensive overview
   return (
     <div className="hostel-settings">
       <div className="page-header">
@@ -407,26 +408,8 @@ const Settings = () => {
         </div>
       </div>
 
-      <div className="hostel-configured-state">
-        <div className="configured-content">
-          <CheckCircle size={64} className="configured-icon" />
-          <h2>Hostel Successfully Configured!</h2>
-          <p>
-            Your hostel information has been set up. You can now manage tenants,
-            rooms, and other settings.
-          </p>
-          <div className="configured-actions">
-            <button className="btn btn-primary">
-              <Users size={20} />
-              Manage Tenants
-            </button>
-            <button className="btn btn-outline">
-              <Home size={20} />
-              View Rooms
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* Hostel Overview Component - Shows all the data and metrics */}
+      <HostelOverview hostelInfo={hostelInfo} />
     </div>
   );
 };
