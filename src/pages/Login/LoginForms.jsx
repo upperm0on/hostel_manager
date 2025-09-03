@@ -12,32 +12,19 @@ function LoginForms() {
   const location = useLocation();
   const { login } = useAuth();
 
-  async function handleLogin(e) {
+    async function handleLogin(e) {
     e.preventDefault();
     const username = e.target.querySelector("#name").value;
     const password = e.target.querySelector("#password").value;
 
-      // Mock authentication for testing
-  if (username && password) {
+    if (!username || !password) {
+      setError("Please enter both username and password");
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
-    
-    // Simulate API delay
-    setTimeout(() => {
-      // Mock successful login
-      const mockToken = "mock-jwt-token-" + Date.now();
-      login(mockToken, username);
-      
-      // Redirect to the page they were trying to access, or dashboard
-      const from = location.state?.from?.pathname || "/";
-      navigate(from, { replace: true });
-    }, 1000);
-  } else {
-    setError("Please enter both username and password");
-  }
 
-    // TODO: Replace with real API call when backend is ready
-    /*
     try {
       const res = await fetch("http://localhost:8080/hq/api/login/", {
         method: "POST",
@@ -46,7 +33,15 @@ function LoginForms() {
       });
 
       if (!res.ok) {
-        throw new Error("Invalid credentials");
+        if (res.status === 401) {
+          throw new Error("Invalid username or password");
+        } else if (res.status === 500) {
+          throw new Error("Server error. Please try again later.");
+        } else if (res.status === 404) {
+          throw new Error("Login endpoint not found. Please check the URL.");
+        } else {
+          throw new Error(`Login failed (${res.status}). Please try again.`);
+        }
       }
 
       const data = await res.json();
@@ -59,9 +54,10 @@ function LoginForms() {
         setError("Invalid login. Please try again.");
       }
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Login failed. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
-    */
   }
 
   return (
