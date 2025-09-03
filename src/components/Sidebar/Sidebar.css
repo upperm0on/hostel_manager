@@ -154,6 +154,24 @@
   color: var(--text-primary);
 }
 
+.sidebar-footer-logout {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-footer-logout:hover {
+  background-color: var(--error);
+  color: white;
+}
+
 /* Mobile Sidebar Toggle */
 .sidebar-toggle {
   display: none;

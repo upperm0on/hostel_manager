@@ -1,0 +1,120 @@
+.sign_up {
+  margin: 30px;
+  padding: 40px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
+  min-width: 400px;
+}
+
+.sign_up .form-title {
+  font-size: 1.5rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-primary);
+}
+
+.sign_up .sign_up-item {
+  margin: 20px;
+  display: flex;
+  flex-direction: row;
+  border-bottom: 1px solid var(--border);
+  width: 300px;
+  padding: 10px 5px;
+}
+
+.sign_up .sign_up-item label .label_container {
+  height: 35px;
+  width: 35px;
+}
+
+.sign_up .sign_up-item label .label_container img {
+  height: 100%;
+  width: 100%;
+}
+
+.sign_up .sign_up-item input {
+  padding: 5px 15px;
+  font-size: 1rem;
+  font-weight: 400;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+}
+
+.sign_up .sign_up-item input:focus {
+  outline: none;
+  border-bottom-color: var(--primary);
+}
+
+.sign_up .sign_up-item input::placeholder {
+  color: var(--text-muted);
+}
+
+.sign_up .sign_up-item .show_hide {
+    cursor: pointer;
+    height: 22.5px;
+    width: 22.5px;
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+}
+
+.sign_up .sign_up-item .show_hide:hover {
+    background: var(--background-hover);
+}
+
+.sign_up .sign_up-item .show_hide img {
+    height: 100%;
+    width: 100%;
+}
+
+.sign_up .form_submit {
+    font-size: 1rem;
+    padding: 10px 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 500;
+    color: white;
+    border: none;
+    background: var(--primary);
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    transition: var(--transition);
+}
+
+.sign_up .form_submit:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.login_option {
+    font-size: 1rem;
+    margin: 30px;
+    color: var(--text-secondary);
+}
+
+.error-message {
+    color: var(--error);
+    background: var(--error-light);
+    padding: 12px;
+    border-radius: var(--radius-md);
+    margin-bottom: 20px;
+    border: 1px solid var(--error);
+    font-size: 0.9rem;
+}
+
+.login_option a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.login_option a:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}

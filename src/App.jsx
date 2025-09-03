@@ -1,5 +1,6 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { HostelProvider, useHostel } from './contexts/HostelContext';
 import Sidebar from './components/Sidebar/Sidebar';
 import Dashboard from './pages/Dashboard/Dashboard';
@@ -8,6 +9,8 @@ import Payments from './pages/Payments/Payments';
 import Settings from './pages/Settings/Settings';
 import TenantProfile from './pages/Tenants/TenantProfile';
 import NoHostelState from './components/NoHostelState/NoHostelState';
+import LoginForms from './pages/Login/LoginForms';
+import ProtectedRoute from './components/Auth/ProtectedRoute';
 
 import './assets/css/theme.css';
 import './assets/css/layout.css';
@@ -15,7 +18,21 @@ import './assets/css/layout.css';
 // Main app content component
 function AppContent() {
   const { hasHostel } = useHostel();
+  const { isAuthenticated } = useAuth();
 
+  // If not authenticated, show login page
+  if (!isAuthenticated) {
+    return (
+      <div className="auth-container">
+        <Routes>
+          <Route path="/login" element={<LoginForms />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </div>
+    );
+  }
+
+  // If authenticated, show the main app
   return (
     <div className="app">
       <Sidebar />
@@ -35,6 +52,7 @@ function AppContent() {
               !hasHostel ? <NoHostelState /> : <Payments />
             } />
             <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
       </div>
@@ -45,11 +63,13 @@ function AppContent() {
 // Main App component with context provider
 function App() {
   return (
-    <HostelProvider>
-      <Router>
-        <AppContent />
-      </Router>
-    </HostelProvider>
+    <AuthProvider>
+      <HostelProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </HostelProvider>
+    </AuthProvider>
   );
 }
 

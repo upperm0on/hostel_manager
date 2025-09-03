@@ -85,3 +85,13 @@
 
 .gap-4 { gap: var(--spacing-xl); }
 .gap-6 { gap: var(--spacing-2xl); }
+
+/* Auth Container */
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background-primary);
+  padding: 20px;
+}

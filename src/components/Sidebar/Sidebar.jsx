@@ -1,18 +1,21 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { 
   Home, 
   Users, 
   CreditCard, 
   Settings, 
   ChevronDown,
-  Menu
+  Menu,
+  LogOut
 } from 'lucide-react';
 import './Sidebar.css';
 
 const Sidebar = () => {
   const location = useLocation();
   const [isOpen, setIsOpen] = React.useState(false);
+  const { user, logout } = useAuth();
 
   const navItems = [
     { path: '/', icon: Home, label: 'Dashboard' },
@@ -65,14 +68,18 @@ const Sidebar = () => {
         <div className="sidebar-footer">
           <div className="sidebar-footer-content">
             <div className="sidebar-footer-avatar">
-              AM
+              {user?.username?.charAt(0).toUpperCase() || 'U'}
             </div>
             <div className="sidebar-footer-info">
-              <div className="sidebar-footer-name">Admin Manager</div>
+              <div className="sidebar-footer-name">{user?.username || 'User'}</div>
               <div className="sidebar-footer-role">Hostel Manager</div>
             </div>
-            <button className="sidebar-footer-toggle">
-              <ChevronDown size={16} />
+            <button 
+              className="sidebar-footer-logout"
+              onClick={logout}
+              title="Logout"
+            >
+              <LogOut size={16} />
             </button>
           </div>
         </div>
