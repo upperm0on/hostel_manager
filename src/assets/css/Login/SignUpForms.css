@@ -28,11 +28,18 @@
 .sign_up .sign_up-item label .label_container {
   height: 35px;
   width: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  background: var(--background-hover);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
 }
 
-.sign_up .sign_up-item label .label_container img {
-  height: 100%;
-  width: 100%;
+.sign_up .sign_up-item label .label_container:hover {
+  background: var(--border);
+  color: var(--text-primary);
 }
 
 .sign_up .sign_up-item input {
@@ -55,20 +62,22 @@
 
 .sign_up .sign_up-item .show_hide {
     cursor: pointer;
-    height: 22.5px;
-    width: 22.5px;
-    padding: 4px;
+    height: 28px;
+    width: 28px;
+    padding: 6px;
     border-radius: var(--radius-sm);
     transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    background: var(--background-hover);
+    border: 1px solid var(--border);
 }
 
 .sign_up .sign_up-item .show_hide:hover {
     background: var(--background-hover);
-}
-
-.sign_up .sign_up-item .show_hide img {
-    height: 100%;
-    width: 100%;
+    color: var(--text-primary);
 }
 
 .sign_up .form_submit {
