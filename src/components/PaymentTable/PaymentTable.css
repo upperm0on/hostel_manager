@@ -270,6 +270,36 @@
   cursor: not-allowed;
 }
 
+/* Page Numbers */
+.page-numbers {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.page-number {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  background-color: var(--surface);
+  color: var(--text-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  min-width: 36px;
+}
+
+.page-number:hover:not(.active) {
+  background-color: var(--background);
+  border-color: var(--primary);
+}
+
+.page-number.active {
+  background-color: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .payment-table-header {

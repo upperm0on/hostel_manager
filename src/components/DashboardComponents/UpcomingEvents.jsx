@@ -28,7 +28,19 @@ const UpcomingEvents = ({ events }) => {
     <div className="dashboard-section">
       <div className="section-header">
         <h3 className="section-title">Upcoming Events</h3>
-        <button className="section-action">
+        <button 
+          className="section-action"
+          onClick={() => {
+            // Show calendar view or navigate to events page
+            const today = new Date();
+            const events = [
+              { date: '2024-01-15', title: 'Monthly Rent Due' },
+              { date: '2024-01-18', title: 'Maintenance Inspection' },
+              { date: '2024-01-20', title: 'New Tenant Check-in' }
+            ];
+            alert(`Upcoming Events:\n${events.map(e => `${e.date}: ${e.title}`).join('\n')}`);
+          }}
+        >
           View Calendar
           <ArrowRight size={16} />
         </button>

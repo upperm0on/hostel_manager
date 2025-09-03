@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, Edit, Users } from 'lucide-react';
+import { Eye, Edit, Users, Trash2 } from 'lucide-react';
+import { ConfirmationModal } from '../Common';
 import './TenantComponents.css';
 
-const TenantTable = ({ tenants, onView, onEdit }) => {
+const TenantTable = ({ tenants, onView, onEdit, onDelete }) => {
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, tenant: null });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
   const getStatusClass = (status) => {
     switch (status) {
       case 'active':
@@ -27,6 +31,43 @@ const TenantTable = ({ tenants, onView, onEdit }) => {
         return '❌';
       default:
         return <Users size={16} />;
+    }
+  };
+
+  const handleDeleteClick = (tenant) => {
+    setDeleteModal({ isOpen: true, tenant });
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteModal.tenant && onDelete) {
+      onDelete(deleteModal.tenant);
+    }
+    setDeleteModal({ isOpen: false, tenant: null });
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModal({ isOpen: false, tenant: null });
+  };
+
+  // Pagination logic
+  const totalPages = Math.ceil(tenants.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentTenants = tenants.slice(startIndex, endIndex);
+
+  const goToPage = (page) => {
+    setCurrentPage(page);
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
     }
   };
 
@@ -67,7 +108,7 @@ const TenantTable = ({ tenants, onView, onEdit }) => {
           </tr>
         </thead>
         <tbody>
-          {tenants.map((tenant) => (
+          {currentTenants.map((tenant) => (
             <tr key={tenant.id} className="tenant-row">
               <td>
                 <div className="tenant-info">
@@ -112,6 +153,13 @@ const TenantTable = ({ tenants, onView, onEdit }) => {
                   >
                     <Edit className="tenant-action-icon" />
                   </button>
+                  <button
+                    className="tenant-action-button delete"
+                    onClick={() => handleDeleteClick(tenant)}
+                    title="Delete tenant"
+                  >
+                    <Trash2 className="tenant-action-icon" />
+                  </button>
                 </div>
               </td>
             </tr>
@@ -121,17 +169,51 @@ const TenantTable = ({ tenants, onView, onEdit }) => {
 
       <div className="tenant-table-pagination">
         <div className="tenant-table-pagination-info">
-          Showing {tenants.length} of {tenants.length} tenants
+          Showing {startIndex + 1}-{Math.min(endIndex, tenants.length)} of {tenants.length} tenants
         </div>
         <div className="tenant-table-pagination-controls">
-          <button className="tenant-table-pagination-button" disabled>
+          <button 
+            className="tenant-table-pagination-button" 
+            onClick={goToPrevPage}
+            disabled={currentPage === 1}
+          >
             Previous
           </button>
-          <button className="tenant-table-pagination-button" disabled>
+          
+          {/* Page numbers */}
+          <div className="page-numbers">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <button
+                key={page}
+                className={`page-number ${page === currentPage ? 'active' : ''}`}
+                onClick={() => goToPage(page)}
+              >
+                {page}
+              </button>
+            ))}
+          </div>
+          
+          <button 
+            className="tenant-table-pagination-button" 
+            onClick={goToNextPage}
+            disabled={currentPage === totalPages}
+          >
             Next
           </button>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Tenant"
+        message={`Are you sure you want to delete ${deleteModal.tenant?.name}? This action cannot be undone.`}
+        confirmText="Delete Tenant"
+        cancelText="Cancel"
+        type="danger"
+      />
     </div>
   );
 };

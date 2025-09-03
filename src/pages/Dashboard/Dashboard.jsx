@@ -7,7 +7,9 @@ import {
   RecentActivities,
   UpcomingEvents,
   MaintenanceAlerts,
-  TopPerformers
+  TopPerformers,
+  DashboardAnalytics,
+  DashboardCharts
 } from '../../components/DashboardComponents';
 import './Dashboard.css';
 
@@ -88,6 +90,12 @@ const Dashboard = () => {
 
       {/* Dashboard Stats Component */}
       <DashboardStats stats={mockData} />
+
+      {/* Dashboard Analytics Component */}
+      <DashboardAnalytics hostelInfo={hostelInfo} />
+
+      {/* Dashboard Charts Component */}
+      <DashboardCharts />
 
       {/* Dashboard Content Grid */}
       <div className="dashboard-content">

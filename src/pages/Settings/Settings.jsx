@@ -9,6 +9,9 @@ import {
   X,
   CheckCircle,
   Users,
+  BarChart3,
+  CreditCard,
+  Settings as SettingsIcon,
 } from "lucide-react";
 import {
   HostelDetailsTab,
@@ -19,6 +22,8 @@ import {
   NavigationButtons,
   AmenityModal,
   HostelOverview,
+  AnalyticsTab,
+  BankingDetailsTab,
 } from "../../components/SettingsTabs";
 import "./Settings.css";
 
@@ -27,6 +32,7 @@ const Settings = () => {
     useHostel();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showAddHostel, setShowAddHostel] = useState(false);
+  const [activeTab, setActiveTab] = useState('hostel');
 
   // Form data state
   const [hostelDetails, setHostelDetails] = useState({
@@ -39,6 +45,7 @@ const Settings = () => {
   const [generalAmenities, setGeneralAmenities] = useState([]);
   const [roomDetails, setRoomDetails] = useState([]);
   const [additionalInfo, setAdditionalInfo] = useState([]);
+  const [bankingDetails, setBankingDetails] = useState({});
 
   // Room management state
   const [showAmenityModal, setShowAmenityModal] = useState(false);
@@ -164,7 +171,7 @@ const Settings = () => {
   };
 
   const nextSlide = () => {
-    if (currentSlide < 3) {
+    if (currentSlide < 4) {
       setCurrentSlide(currentSlide + 1);
     }
   };
@@ -234,6 +241,12 @@ const Settings = () => {
       deleteHostel();
       alert("Hostel deleted successfully!");
     }
+  };
+
+  const handleBankingDetailsSave = (details) => {
+    setBankingDetails(details);
+    // In a real app, this would save to the backend
+    console.log('Saving banking details:', details);
   };
 
   // If no hostel info exists, show add hostel option
@@ -351,6 +364,18 @@ const Settings = () => {
                   additionalInfo={additionalInfo}
                 />
               )}
+
+              {/* Slide 5: Analytics Component */}
+              {currentSlide === 4 && (
+                <AnalyticsTab
+                  hostelInfo={{
+                    hostelDetails,
+                    generalAmenities,
+                    roomDetails,
+                    additionalInfo
+                  }}
+                />
+              )}
             </div>
           </div>
 
@@ -385,7 +410,7 @@ const Settings = () => {
         <div className="page-header-content">
           <div>
             <h1 className="page-title">Settings</h1>
-            <p className="page-subtitle">Your hostel is configured and ready</p>
+            <p className="page-subtitle">Manage your hostel configuration and preferences</p>
           </div>
           <div className="settings-actions">
             <button
@@ -408,8 +433,54 @@ const Settings = () => {
         </div>
       </div>
 
-      {/* Hostel Overview Component - Shows all the data and metrics */}
-      <HostelOverview hostelInfo={hostelInfo} />
+      {/* Settings Tabs Navigation */}
+      <div className="settings-tabs-navigation">
+        <button
+          className={`tab-button ${activeTab === 'hostel' ? 'active' : ''}`}
+          onClick={() => setActiveTab('hostel')}
+        >
+          <SettingsIcon size={20} />
+          Hostel Settings
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'analytics' ? 'active' : ''}`}
+          onClick={() => setActiveTab('analytics')}
+        >
+          <BarChart3 size={20} />
+          Analytics & Reports
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'banking' ? 'active' : ''}`}
+          onClick={() => setActiveTab('banking')}
+        >
+          <CreditCard size={20} />
+          Banking Details
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      <div className="tab-content">
+        {activeTab === 'hostel' && (
+          <div className="tab-panel">
+            <HostelOverview hostelInfo={hostelInfo} />
+          </div>
+        )}
+        
+        {activeTab === 'analytics' && (
+          <div className="tab-panel">
+            <AnalyticsTab hostelInfo={hostelInfo} />
+          </div>
+        )}
+        
+        {activeTab === 'banking' && (
+          <div className="tab-panel">
+            <BankingDetailsTab 
+              hostelInfo={{ ...hostelInfo, bankingDetails }} 
+              onSave={handleBankingDetailsSave}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 };

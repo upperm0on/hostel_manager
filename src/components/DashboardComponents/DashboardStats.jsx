@@ -10,28 +10,32 @@ const DashboardStats = ({ stats }) => {
       title: 'Total Tenants',
       value: stats.totalTenants,
       change: '+5%',
-      changeType: 'positive'
+      changeType: 'positive',
+      variant: 'primary'
     },
     {
       icon: Home,
       title: 'Occupancy Rate',
       value: `${stats.occupancyRate}%`,
       change: '+2%',
-      changeType: 'positive'
+      changeType: 'positive',
+      variant: 'secondary'
     },
     {
       icon: DollarSign,
       title: 'Monthly Revenue',
       value: `$${stats.monthlyRevenue.toLocaleString()}`,
       change: '+12%',
-      changeType: 'positive'
+      changeType: 'positive',
+      variant: 'warning'
     },
     {
       icon: AlertCircle,
       title: 'Pending Payments',
       value: stats.pendingPayments,
       change: '-3',
-      changeType: 'negative'
+      changeType: 'negative',
+      variant: 'error'
     }
   ];
 
@@ -46,6 +50,7 @@ const DashboardStats = ({ stats }) => {
             value={stat.value}
             change={stat.change}
             changeType={stat.changeType}
+            variant={stat.variant}
           />
         ))}
       </div>

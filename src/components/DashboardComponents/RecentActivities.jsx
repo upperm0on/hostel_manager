@@ -37,7 +37,10 @@ const RecentActivities = ({ activities }) => {
     <div className="dashboard-section">
       <div className="section-header">
         <h3 className="section-title">Recent Activities</h3>
-        <button className="section-action">
+        <button 
+          className="section-action"
+          onClick={() => window.location.href = '/tenants'}
+        >
           View All
           <ArrowRight size={16} />
         </button>

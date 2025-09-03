@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useHostel } from '../../contexts/HostelContext';
 import { useNavigate } from 'react-router-dom';
 import { Users, Plus } from 'lucide-react';
-import { TenantSearch, TenantTable } from '../../components/TenantComponents';
+import { TenantSearch, TenantTable, TenantModal } from '../../components/TenantComponents';
 import './Tenants.css';
 
 const Tenants = () => {
@@ -10,6 +10,9 @@ const Tenants = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [showTenantModal, setShowTenantModal] = useState(false);
+  const [editingTenant, setEditingTenant] = useState(null);
+  const [modalMode, setModalMode] = useState('add');
 
   // Mock data for demonstration
   const mockTenants = [
@@ -64,13 +67,52 @@ const Tenants = () => {
   };
 
   const handleAddTenant = () => {
-    // Handle adding new tenant
-    console.log('Add new tenant');
+    setModalMode('add');
+    setEditingTenant(null);
+    setShowTenantModal(true);
   };
 
   const handleEditTenant = (tenant) => {
-    // Handle editing tenant
-    console.log('Edit tenant:', tenant);
+    setModalMode('edit');
+    setEditingTenant(tenant);
+    setShowTenantModal(true);
+  };
+
+  const handleSaveTenant = async (tenantData) => {
+    try {
+      if (modalMode === 'add') {
+        // Add new tenant logic
+        const newTenant = {
+          id: Date.now(),
+          ...tenantData,
+          status: 'active'
+        };
+        console.log('Adding new tenant:', newTenant);
+        // In a real app, this would save to backend
+      } else {
+        // Edit tenant logic
+        const updatedTenant = { ...editingTenant, ...tenantData };
+        console.log('Updating tenant:', updatedTenant);
+        // In a real app, this would update in backend
+      }
+    } catch (error) {
+      console.error('Error saving tenant:', error);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowTenantModal(false);
+    setEditingTenant(null);
+  };
+
+  const handleDeleteTenant = async (tenant) => {
+    try {
+      console.log('Deleting tenant:', tenant);
+      // In a real app, this would delete from backend
+      // For now, just log the action
+    } catch (error) {
+      console.error('Error deleting tenant:', error);
+    }
   };
 
   // If no hostel exists, show setup message
@@ -137,6 +179,16 @@ const Tenants = () => {
       <TenantTable
         tenants={filteredTenants}
         onEdit={handleEditTenant}
+        onDelete={handleDeleteTenant}
+      />
+
+      {/* Tenant Modal */}
+      <TenantModal
+        isOpen={showTenantModal}
+        onClose={handleCloseModal}
+        tenant={editingTenant}
+        onSave={handleSaveTenant}
+        mode={modalMode}
       />
     </div>
   );

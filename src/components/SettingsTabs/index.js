@@ -6,3 +6,5 @@ export { default as ProgressIndicator } from './ProgressIndicator';
 export { default as NavigationButtons } from './NavigationButtons';
 export { default as AmenityModal } from './AmenityModal';
 export { default as HostelOverview } from './HostelOverview';
+export { default as AnalyticsTab } from './AnalyticsTab';
+export { default as BankingDetailsTab } from './BankingDetailsTab';

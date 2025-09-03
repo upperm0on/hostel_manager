@@ -12,9 +12,17 @@
   --border: #e5e7eb;
   --border-hover: #d1d5db;
   --success: #10b981;
+  --success-color: #10b981;
+  --success-light: #d1fae5;
   --warning: #f59e0b;
+  --warning-color: #f59e0b;
+  --warning-light: #fef3c7;
   --error: #ef4444;
+  --error-color: #ef4444;
+  --error-light: #fee2e2;
   --info: #3b82f6;
+  --info-color: #3b82f6;
+  --info-light: #dbeafe;
 
   /* Spacing */
   --spacing-xs: 0.25rem;

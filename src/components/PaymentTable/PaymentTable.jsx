@@ -3,6 +3,8 @@ import { Eye, Edit, CheckCircle, XCircle, Clock } from 'lucide-react';
 import './PaymentTable.css';
 
 const PaymentTable = ({ payments = [], onView, onEdit }) => {
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [itemsPerPage] = React.useState(10);
   const getStatusIcon = (status) => {
     switch (status) {
       case 'paid':
@@ -26,6 +28,28 @@ const PaymentTable = ({ payments = [], onView, onEdit }) => {
         return 'pending';
       default:
         return 'pending';
+    }
+  };
+
+  // Pagination logic
+  const totalPages = Math.ceil(payments.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentPayments = payments.slice(startIndex, endIndex);
+
+  const goToPage = (page) => {
+    setCurrentPage(page);
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
     }
   };
 
@@ -64,7 +88,7 @@ const PaymentTable = ({ payments = [], onView, onEdit }) => {
           </tr>
         </thead>
         <tbody>
-          {payments.map((payment) => (
+          {currentPayments.map((payment) => (
             <tr key={payment.id} className="payment-row">
               <td>
                 <div className="payment-tenant">
@@ -122,13 +146,35 @@ const PaymentTable = ({ payments = [], onView, onEdit }) => {
 
       <div className="payment-table-pagination">
         <div className="payment-table-pagination-info">
-          Showing {payments.length} of {payments.length} payments
+          Showing {startIndex + 1}-{Math.min(endIndex, payments.length)} of {payments.length} payments
         </div>
         <div className="payment-table-pagination-controls">
-          <button className="payment-table-pagination-button" disabled>
+          <button 
+            className="payment-table-pagination-button" 
+            onClick={goToPrevPage}
+            disabled={currentPage === 1}
+          >
             Previous
           </button>
-          <button className="payment-table-pagination-button" disabled>
+          
+          {/* Page numbers */}
+          <div className="page-numbers">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                              <button
+                  key={page}
+                  className={`page-number ${page === currentPage ? 'active' : ''}`}
+                  onClick={() => goToPage(page)}
+                >
+                {page}
+              </button>
+            ))}
+          </div>
+          
+          <button 
+            className="payment-table-pagination-button" 
+            onClick={goToNextPage}
+            disabled={currentPage === totalPages}
+          >
             Next
           </button>
         </div>

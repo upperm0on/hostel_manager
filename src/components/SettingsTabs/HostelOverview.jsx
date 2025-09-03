@@ -336,19 +336,55 @@ const HostelOverview = ({ hostelInfo }) => {
             </div>
             
             <div className="actions-grid">
-              <button className="action-button primary">
+              <button 
+                className="action-button primary"
+                onClick={() => window.location.href = '/tenants'}
+              >
                 <Users size={18} />
                 <span>Manage Tenants</span>
               </button>
-              <button className="action-button">
+              <button 
+                className="action-button"
+                onClick={() => {
+                  // Show room information in a modal or navigate to room management
+                  const roomInfo = hostelInfo?.roomDetails || [];
+                  if (roomInfo.length > 0) {
+                    alert(`Room Information:\n\n${roomInfo.map(room => 
+                      `🏠 ${room.numberInRoom || 'Room'}: ${room.quantity || 0} beds, $${room.price || 0}/month`
+                    ).join('\n')}`);
+                  } else {
+                    alert('No room information available. Please add rooms in the Room Details tab.');
+                  }
+                }}
+              >
                 <Home size={18} />
                 <span>View Rooms</span>
               </button>
-              <button className="action-button">
+              <button 
+                className="action-button"
+                onClick={() => window.location.href = '/payments'}
+              >
                 <CreditCard size={18} />
                 <span>Track Payments</span>
               </button>
-              <button className="action-button">
+              <button 
+                className="action-button"
+                onClick={() => {
+                  // Show quick analytics overview
+                  const analytics = {
+                    occupancy: '87%',
+                    revenue: '$45,600',
+                    tenants: '156',
+                    satisfaction: '4.2/5'
+                  };
+                  
+                  alert(`Quick Analytics Overview:\n\n` +
+                        `📊 Occupancy Rate: ${analytics.occupancy}\n` +
+                        `💰 Monthly Revenue: ${analytics.revenue}\n` +
+                        `👥 Total Tenants: ${analytics.tenants}\n` +
+                        `⭐ Tenant Satisfaction: ${analytics.satisfaction}`);
+                }}
+              >
                 <BarChart3 size={18} />
                 <span>View Analytics</span>
               </button>

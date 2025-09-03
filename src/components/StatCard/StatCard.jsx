@@ -4,8 +4,8 @@ import './StatCard.css';
 
 const StatCard = ({ 
   icon: Icon, 
-  number, 
-  label, 
+  title, 
+  value, 
   change, 
   changeType = 'neutral',
   variant = 'primary' 
@@ -17,8 +17,8 @@ const StatCard = ({
       </div>
       
       <div className="stat-card-content">
-        <div className="stat-card-number">{number}</div>
-        <div className="stat-card-label">{label}</div>
+        <div className="stat-card-number">{value}</div>
+        <div className="stat-card-label">{title}</div>
         
         {change && (
           <div className={`stat-card-change ${changeType}`}>
