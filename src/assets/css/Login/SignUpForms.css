@@ -94,10 +94,17 @@
     transition: var(--transition);
 }
 
-.sign_up .form_submit:hover {
+.sign_up .form_submit:hover:not(:disabled) {
     background: var(--primary-hover);
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
+}
+
+.sign_up .form_submit:disabled {
+    background: var(--text-muted);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 .login_option {

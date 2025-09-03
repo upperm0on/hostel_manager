@@ -7,6 +7,7 @@ import "../../assets/css/Login/SignUpForms.css";
 function LoginForms() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
@@ -16,6 +17,27 @@ function LoginForms() {
     const username = e.target.querySelector("#name").value;
     const password = e.target.querySelector("#password").value;
 
+      // Mock authentication for testing
+  if (username && password) {
+    setIsLoading(true);
+    setError(null);
+    
+    // Simulate API delay
+    setTimeout(() => {
+      // Mock successful login
+      const mockToken = "mock-jwt-token-" + Date.now();
+      login(mockToken, username);
+      
+      // Redirect to the page they were trying to access, or dashboard
+      const from = location.state?.from?.pathname || "/";
+      navigate(from, { replace: true });
+    }, 1000);
+  } else {
+    setError("Please enter both username and password");
+  }
+
+    // TODO: Replace with real API call when backend is ready
+    /*
     try {
       const res = await fetch("http://localhost:8080/hq/api/login/", {
         method: "POST",
@@ -30,10 +52,7 @@ function LoginForms() {
       const data = await res.json();
 
       if (data.token) {
-        // Use AuthContext to login
         login(data.token, username);
-
-        // Redirect to the page they were trying to access, or dashboard
         const from = location.state?.from?.pathname || "/";
         navigate(from, { replace: true });
       } else {
@@ -42,6 +61,7 @@ function LoginForms() {
     } catch (err) {
       setError(err.message);
     }
+    */
   }
 
   return (
@@ -79,8 +99,12 @@ function LoginForms() {
         </div>
       </div>
 
-      <button type="submit" className="form_submit">
-        Submit
+      <button 
+        type="submit" 
+        className="form_submit"
+        disabled={isLoading}
+      >
+        {isLoading ? "Logging in..." : "Submit"}
       </button>
       <p className="login_option">
         Don't have an account yet? <Link to="/signup">Sign-Up Here</Link>

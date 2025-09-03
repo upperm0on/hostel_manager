@@ -15,7 +15,7 @@ import ProtectedRoute from './components/Auth/ProtectedRoute';
 import './assets/css/theme.css';
 import './assets/css/layout.css';
 
-// Main app content component
+// Main app content component that uses the contexts
 function AppContent() {
   const { hasHostel } = useHostel();
   const { isAuthenticated } = useAuth();
@@ -60,7 +60,7 @@ function AppContent() {
   );
 }
 
-// Main App component with context provider
+// Main App component with context providers
 function App() {
   return (
     <AuthProvider>
