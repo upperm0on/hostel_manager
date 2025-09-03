@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useHostel } from "../../contexts/HostelContext";
+import { Edit, X, ArrowLeft } from "lucide-react";
 import {
   HostelDetailsTab,
   GeneralAmenitiesTab,
