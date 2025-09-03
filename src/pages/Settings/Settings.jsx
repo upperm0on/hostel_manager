@@ -1,19 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useHostel } from "../../contexts/HostelContext";
 import {
-  Building,
-  Home,
-  Plus,
-  ArrowLeft,
-  Edit,
-  X,
-  CheckCircle,
-  Users,
-  BarChart3,
-  CreditCard,
-  Settings as SettingsIcon,
-} from "lucide-react";
-import {
   HostelDetailsTab,
   GeneralAmenitiesTab,
   RoomDetailsTab,
@@ -25,6 +12,12 @@ import {
   AnalyticsTab,
   BankingDetailsTab,
 } from "../../components/SettingsTabs";
+import {
+  SettingsHeader,
+  NoHostelState,
+  SettingsTabsNavigation,
+  TabContent
+} from "../../components/Settings";
 import "./Settings.css";
 
 const Settings = () => {
@@ -253,34 +246,11 @@ const Settings = () => {
   if (!hasHostel && !showAddHostel) {
     return (
       <div className="hostel-settings">
-        <div className="page-header">
-          <div className="page-header-content">
-            <div>
-              <h1 className="page-title">Settings</h1>
-              <p className="page-subtitle">
-                Configure your hostel settings and preferences
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="no-hostel-state">
-          <div className="no-hostel-content">
-            <Building size={64} className="no-hostel-icon" />
-            <h2>No Hostel Information Found</h2>
-            <p>
-              It looks like you haven't set up your hostel information yet.
-              Let's get started!
-            </p>
-            <button
-              className="btn btn-primary btn-large"
-              onClick={startAddHostel}
-            >
-              <Plus size={20} />
-              Add New Hostel
-            </button>
-          </div>
-        </div>
+        <SettingsHeader
+          title="Settings"
+          subtitle="Configure your hostel settings and preferences"
+        />
+        <NoHostelState onAddHostel={startAddHostel} />
       </div>
     );
   }
@@ -289,30 +259,17 @@ const Settings = () => {
   if (showAddHostel) {
     return (
       <div className="hostel-settings">
-        <div className="page-header">
-          <div className="page-header-content">
-            <div>
-              <h1 className="page-title">
-                {hasHostel ? "Edit Hostel Information" : "Add New Hostel"}
-              </h1>
-              <p className="page-subtitle">
-                {hasHostel
-                  ? "Update your hostel information below"
-                  : "Complete the form below to set up your hostel"}
-              </p>
-            </div>
-            <div className="settings-actions">
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={() => setShowAddHostel(false)}
-              >
-                <ArrowLeft size={20} />
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
+        <SettingsHeader
+          title={hasHostel ? "Edit Hostel Information" : "Add New Hostel"}
+          subtitle={
+            hasHostel
+              ? "Update your hostel information below"
+              : "Complete the form below to set up your hostel"
+          }
+          showActions={true}
+          onEdit={() => setShowAddHostel(false)}
+          onDelete={() => setShowAddHostel(false)}
+        />
 
         {/* Progress Indicator Component */}
         <ProgressIndicator currentSlide={currentSlide} />
@@ -406,81 +363,25 @@ const Settings = () => {
   // If hostel info exists, show comprehensive overview
   return (
     <div className="hostel-settings">
-      <div className="page-header">
-        <div className="page-header-content">
-          <div>
-            <h1 className="page-title">Settings</h1>
-            <p className="page-subtitle">Manage your hostel configuration and preferences</p>
-          </div>
-          <div className="settings-actions">
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={editHostelInfo}
-            >
-              <Edit size={20} />
-              Edit Hostel Info
-            </button>
-            <button
-              type="button"
-              className="btn btn-error"
-              onClick={handleDeleteHostel}
-            >
-              <X size={20} />
-              Delete Hostel
-            </button>
-          </div>
-        </div>
-      </div>
+      <SettingsHeader
+        title="Settings"
+        subtitle="Manage your hostel configuration and preferences"
+        showActions={true}
+        onEdit={editHostelInfo}
+        onDelete={handleDeleteHostel}
+      />
 
-      {/* Settings Tabs Navigation */}
-      <div className="settings-tabs-navigation">
-        <button
-          className={`tab-button ${activeTab === 'hostel' ? 'active' : ''}`}
-          onClick={() => setActiveTab('hostel')}
-        >
-          <SettingsIcon size={20} />
-          Hostel Settings
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'analytics' ? 'active' : ''}`}
-          onClick={() => setActiveTab('analytics')}
-        >
-          <BarChart3 size={20} />
-          Analytics & Reports
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'banking' ? 'active' : ''}`}
-          onClick={() => setActiveTab('banking')}
-        >
-          <CreditCard size={20} />
-          Banking Details
-        </button>
-      </div>
+      <SettingsTabsNavigation
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
 
-      {/* Tab Content */}
-      <div className="tab-content">
-        {activeTab === 'hostel' && (
-          <div className="tab-panel">
-            <HostelOverview hostelInfo={hostelInfo} />
-          </div>
-        )}
-        
-        {activeTab === 'analytics' && (
-          <div className="tab-panel">
-            <AnalyticsTab hostelInfo={hostelInfo} />
-          </div>
-        )}
-        
-        {activeTab === 'banking' && (
-          <div className="tab-panel">
-            <BankingDetailsTab 
-              hostelInfo={{ ...hostelInfo, bankingDetails }} 
-              onSave={handleBankingDetailsSave}
-            />
-          </div>
-        )}
-      </div>
+      <TabContent
+        activeTab={activeTab}
+        hostelInfo={hostelInfo}
+        bankingDetails={bankingDetails}
+        onBankingSave={handleBankingDetailsSave}
+      />
     </div>
   );
 };

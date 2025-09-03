@@ -3,6 +3,8 @@ import { useHostel } from '../../contexts/HostelContext';
 import { useNavigate } from 'react-router-dom';
 import { Home, Plus } from 'lucide-react';
 import {
+  DashboardHeader,
+  DashboardGrid,
   DashboardStats,
   RecentActivities,
   UpcomingEvents,
@@ -10,7 +12,7 @@ import {
   TopPerformers,
   DashboardAnalytics,
   DashboardCharts
-} from '../../components/DashboardComponents';
+} from '../../components/Dashboard';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -54,12 +56,7 @@ const Dashboard = () => {
   if (!hasHostel) {
     return (
       <div className="dashboard">
-        <div className="dashboard-header">
-          <div className="header-content">
-            <h1>Dashboard</h1>
-            <p>Welcome to your hostel management dashboard</p>
-          </div>
-        </div>
+        <DashboardHeader hostelInfo={null} />
         
         <div className="no-hostel-dashboard">
           <div className="no-hostel-content">
@@ -80,13 +77,7 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard">
-      {/* Dashboard Header */}
-      <div className="dashboard-header">
-        <div className="header-content">
-          <h1>Dashboard</h1>
-          <p>Welcome back! Here's what's happening at {hostelInfo?.hostelDetails?.name || 'your hostel'}</p>
-        </div>
-      </div>
+      <DashboardHeader hostelInfo={hostelInfo} />
 
       {/* Dashboard Stats Component */}
       <DashboardStats stats={mockData} />
@@ -97,24 +88,17 @@ const Dashboard = () => {
       {/* Dashboard Charts Component */}
       <DashboardCharts />
 
-      {/* Dashboard Content Grid */}
-      <div className="dashboard-content">
+      <DashboardGrid columns={2}>
         <div className="dashboard-left">
-          {/* Recent Activities Component */}
           <RecentActivities activities={mockData.recentActivities} />
-          
-          {/* Upcoming Events Component */}
           <UpcomingEvents events={mockData.upcomingEvents} />
         </div>
         
         <div className="dashboard-right">
-          {/* Maintenance Alerts Component */}
           <MaintenanceAlerts alerts={mockData.maintenanceAlerts} />
-          
-          {/* Top Performers Component */}
           <TopPerformers performers={mockData.topPerformers} />
         </div>
-      </div>
+      </DashboardGrid>
     </div>
   );
 };
