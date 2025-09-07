@@ -560,157 +560,112 @@ const HostelOverview = ({ hostelInfo }) => {
             </div>
           </div>
 
-          {/* Modern Room Configuration */}
-          <div className="section-card-modern room-configuration-modern">
-            <div className="section-header-modern">
-              <div className="section-title-modern">
-                <div className="section-icon-modern">
-                  <Home size={24} />
-                </div>
-                <div className="section-text-modern">
-                  <h3>Room Configuration</h3>
-                  <p>Detailed breakdown of your hostel's room types and amenities</p>
-                </div>
-              </div>
-              <div className="section-badge-modern">
-                <span className="badge-count">{roomDetails?.length || 0}</span>
-                <span className="badge-label">Room Types</span>
-              </div>
-            </div>
+          {/* Individual Room Type Sections */}
+          {roomDetails?.map((room, index) => {
+            const roomCapacity = parseInt(room.number_in_room) || 0;
+            const roomCount = parseInt(room.number_of_rooms) || 0;
+            const roomPrice = parseInt(room.price) || 0;
+            const totalCapacityForRoom = roomCapacity * roomCount;
             
-            {/* Modern Room Cards */}
-            <div className="rooms-grid-modern">
-              {roomDetails?.map((room, index) => {
-                const roomCapacity = parseInt(room.number_in_room) || 0;
-                const roomCount = parseInt(room.number_of_rooms) || 0;
-                const roomPrice = parseInt(room.price) || 0;
-                const totalCapacityForRoom = roomCapacity * roomCount;
-                const monthlyRevenue = roomPrice * totalCapacityForRoom;
-                
-                // Handle mixed gender configuration
-                const maleRooms = parseInt(room.gender?.male) || 0;
-                const femaleRooms = parseInt(room.gender?.female) || 0;
-                const totalGenderRooms = maleRooms + femaleRooms;
-                const isMixed = maleRooms > 0 && femaleRooms > 0;
-                const genderType = isMixed ? 'Mixed' : (maleRooms > 0 ? 'Male' : 'Female');
-                
-                // Calculate real occupancy rate from tenant data
-                const occupancyData = calculateRoomTypeOccupancy(index, roomCount);
-                const { occupancyRate, occupiedRooms, availableRooms } = occupancyData;
-                
-                return (
-                  <div key={index} className="room-card-modern">
-                    <div className="room-card-header-modern">
-                      <div className="room-type-modern">
-                        <div className="room-type-badge-modern">
-                          <span className="room-type-number-modern">#{index + 1}</span>
-                          <span className="room-type-label-modern">{roomCapacity}-Person Room</span>
-                        </div>
-                        <div className="room-status-modern">
-                          <div className={`status-indicator-modern ${occupancyRate > 80 ? 'high' : occupancyRate > 50 ? 'medium' : 'low'}`}>
-                            {occupancyRate > 80 ? 'High Demand' : occupancyRate > 50 ? 'Moderate' : 'Available'}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="room-price-modern">
-                        <div className="price-amount-modern">${roomPrice.toLocaleString()}</div>
-                        <div className="price-period-modern">per month</div>
-                      </div>
+            // Handle mixed gender configuration
+            const maleRooms = parseInt(room.gender?.male) || 0;
+            const femaleRooms = parseInt(room.gender?.female) || 0;
+            const totalGenderRooms = maleRooms + femaleRooms;
+            const isMixed = maleRooms > 0 && femaleRooms > 0;
+            const genderType = isMixed ? 'Mixed' : (maleRooms > 0 ? 'Male' : 'Female');
+            
+            return (
+              <div key={index} className="section-card-modern room-type-section">
+                <div className="section-header-modern">
+                  <div className="section-title-modern">
+                    <div className="section-icon-modern">
+                      <Home size={24} />
                     </div>
-                    
-                    <div className="room-metrics-modern">
-                      <div className="metric-item-modern">
-                        <div className="metric-icon-modern">
-                          <Home size={16} />
-                        </div>
-                        <div className="metric-content-modern">
-                          <div className="metric-value-modern">{roomCount}</div>
-                          <div className="metric-label-modern">Rooms</div>
-                        </div>
-                      </div>
-                      
-                      <div className="metric-item-modern">
-                        <div className="metric-icon-modern">
-                          <Users size={16} />
-                        </div>
-                        <div className="metric-content-modern">
-                          <div className="metric-value-modern">{roomCapacity}</div>
-                          <div className="metric-label-modern">Per Room</div>
-                        </div>
-                      </div>
-                      
-                      <div className="metric-item-modern">
-                        <div className="metric-icon-modern">
-                          <Users size={16} />
-                        </div>
-                        <div className="metric-content-modern">
-                          <div className="metric-value-modern">{totalCapacityForRoom}</div>
-                          <div className="metric-label-modern">Total Capacity</div>
-                        </div>
-                      </div>
-                      
+                    <div className="section-text-modern">
+                      <h3>{roomCapacity}-Person Room Type</h3>
+                      <p>Configuration and details for {roomCapacity}-person rooms</p>
                     </div>
-                    
-                    {/* Modern Gender Distribution */}
-                    <div className="gender-section-modern">
-                      <div className="gender-header-modern">
-                        <Users size={16} />
-                        <span>Gender Allocation</span>
-                      </div>
-                      <div className="gender-grid-modern">
-                        {isMixed ? (
-                          <>
-                            <div className="gender-item-modern male">
-                              <div className="gender-icon-modern">♂</div>
-                              <div className="gender-content-modern">
-                                <div className="gender-value-modern">{maleRooms}</div>
-                                <div className="gender-label-modern">Male Rooms</div>
-                              </div>
-                            </div>
-                            <div className="gender-item-modern female">
-                              <div className="gender-icon-modern">♀</div>
-                              <div className="gender-content-modern">
-                                <div className="gender-value-modern">{femaleRooms}</div>
-                                <div className="gender-label-modern">Female Rooms</div>
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <div className={`gender-item-modern ${genderType.toLowerCase()}`}>
-                            <div className="gender-icon-modern">
-                              {genderType === 'Male' ? '♂' : '♀'}
-                            </div>
-                            <div className="gender-content-modern">
-                              <div className="gender-value-modern">{totalGenderRooms}</div>
-                              <div className="gender-label-modern">{genderType} Rooms</div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* Modern Room Amenities */}
-                    {room.amenities?.length > 0 && (
-                      <div className="amenities-section-modern">
-                        <div className="amenities-header-modern">
-                          <Wifi size={14} />
-                          <span>Room Amenities ({room.amenities.length})</span>
-                        </div>
-                        <div className="amenities-list-modern">
-                          {room.amenities.map((amenity, amenityIndex) => (
-                            <span key={amenityIndex} className="amenity-tag-modern">
-                              {amenity}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
                   </div>
-                );
-              })}
-            </div>
-          </div>
+                  <div className="section-badge-modern">
+                    <span className="badge-count">{roomCount}</span>
+                    <span className="badge-label">Rooms</span>
+                  </div>
+                </div>
+                
+                <div className="room-type-content">
+                  <div className="room-type-overview">
+                    <div className="overview-item">
+                      <span className="overview-label">Price per Month</span>
+                      <span className="overview-value">${roomPrice.toLocaleString()}</span>
+                    </div>
+                    <div className="overview-item">
+                      <span className="overview-label">Total Capacity</span>
+                      <span className="overview-value">{totalCapacityForRoom} beds</span>
+                    </div>
+                    <div className="overview-item">
+                      <span className="overview-label">Gender Type</span>
+                      <span className="overview-value">{genderType}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Gender Distribution */}
+                  <div className="gender-section-modern">
+                    <div className="gender-header-modern">
+                      <Users size={16} />
+                      <span>Gender Allocation</span>
+                    </div>
+                    <div className="gender-grid-modern">
+                      {isMixed ? (
+                        <>
+                          <div className="gender-item-modern male">
+                            <div className="gender-icon-modern">♂</div>
+                            <div className="gender-content-modern">
+                              <div className="gender-value-modern">{maleRooms}</div>
+                              <div className="gender-label-modern">Male Rooms</div>
+                            </div>
+                          </div>
+                          <div className="gender-item-modern female">
+                            <div className="gender-icon-modern">♀</div>
+                            <div className="gender-content-modern">
+                              <div className="gender-value-modern">{femaleRooms}</div>
+                              <div className="gender-label-modern">Female Rooms</div>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className={`gender-item-modern ${genderType.toLowerCase()}`}>
+                          <div className="gender-icon-modern">
+                            {genderType === 'Male' ? '♂' : '♀'}
+                          </div>
+                          <div className="gender-content-modern">
+                            <div className="gender-value-modern">{totalGenderRooms}</div>
+                            <div className="gender-label-modern">{genderType} Rooms</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Room Amenities */}
+                  {room.amenities?.length > 0 && (
+                    <div className="amenities-section-modern">
+                      <div className="amenities-header-modern">
+                        <Wifi size={14} />
+                        <span>Room Amenities ({room.amenities.length})</span>
+                      </div>
+                      <div className="amenities-list-modern">
+                        {room.amenities.map((amenity, amenityIndex) => (
+                          <span key={amenityIndex} className="amenity-tag-modern">
+                            {amenity}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
 
           {/* Modern General Amenities */}
           {generalAmenities?.filter(item => item.value.trim()).length > 0 && (

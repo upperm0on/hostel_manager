@@ -3450,6 +3450,44 @@
   font-weight: 600;
 }
 
+/* Room Type Sections */
+.room-type-section {
+  margin-bottom: 24px;
+}
+
+.room-type-content {
+  padding: 20px 0;
+}
+
+.room-type-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--background);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.overview-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.overview-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.overview-value {
+  font-size: 1.125rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
 /* Room Cards */
 .rooms-grid {
   display: grid;
