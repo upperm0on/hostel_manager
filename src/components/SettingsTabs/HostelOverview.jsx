@@ -561,7 +561,8 @@ const HostelOverview = ({ hostelInfo }) => {
           </div>
 
           {/* Individual Room Type Sections */}
-          {roomDetails?.map((room, index) => {
+          <div className="room-type-sections-container">
+            {roomDetails?.map((room, index) => {
             const roomCapacity = parseInt(room.number_in_room) || 0;
             const roomCount = parseInt(room.number_of_rooms) || 0;
             const roomPrice = parseInt(room.price) || 0;
@@ -666,6 +667,7 @@ const HostelOverview = ({ hostelInfo }) => {
               </div>
             );
           })}
+          </div>
 
           {/* Modern General Amenities */}
           {generalAmenities?.filter(item => item.value.trim()).length > 0 && (
