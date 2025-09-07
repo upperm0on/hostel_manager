@@ -706,18 +706,6 @@ const HostelOverview = ({ hostelInfo }) => {
                       </div>
                     )}
                     
-                    
-                    {/* Modern Room Status */}
-                    <div className="room-status-modern">
-                      <div className="status-item-modern available">
-                        <span className="status-label-modern">Available</span>
-                        <span className="status-value-modern">{availableRooms} rooms</span>
-                      </div>
-                      <div className="status-item-modern occupied">
-                        <span className="status-label-modern">Occupied</span>
-                        <span className="status-value-modern">{occupiedRooms} rooms</span>
-                      </div>
-                    </div>
                   </div>
                 );
               })}
