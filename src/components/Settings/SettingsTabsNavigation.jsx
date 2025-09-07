@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings as SettingsIcon, BarChart3, CreditCard } from 'lucide-react';
+import { Settings as SettingsIcon, CreditCard } from 'lucide-react';
 import './SettingsTabsNavigation.css';
 
 const SettingsTabsNavigation = ({ activeTab, onTabChange }) => {
@@ -8,11 +8,6 @@ const SettingsTabsNavigation = ({ activeTab, onTabChange }) => {
       id: 'hostel',
       label: 'Hostel Settings',
       icon: SettingsIcon
-    },
-    {
-      id: 'analytics',
-      label: 'Analytics & Reports',
-      icon: BarChart3
     },
     {
       id: 'banking',

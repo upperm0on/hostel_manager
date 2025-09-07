@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
   User, 
@@ -15,52 +15,97 @@ import './TenantProfile.css';
 
 const TenantProfile = () => {
   const { id } = useParams();
+  const [tenant, setTenant] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock tenant data - in a real app this would come from an API
-  const tenant = {
-    id: parseInt(id),
-    name: 'John Doe',
-    email: 'john.doe@email.com',
-    phone: '+1 (555) 123-4567',
-    room: '101',
-    status: 'active',
-    moveInDate: '2024-01-15',
-    rentAmount: 800,
-    emergencyContact: 'Jane Doe',
-    emergencyPhone: '+1 (555) 987-6543',
-    paymentHistory: [
-      {
-        id: 1,
-        month: 'March 2024',
-        amount: 800,
-        status: 'paid',
-        date: '2024-03-01'
-      },
-      {
-        id: 2,
-        month: 'February 2024',
-        amount: 800,
-        status: 'paid',
-        date: '2024-02-01'
-      },
-      {
-        id: 3,
-        month: 'January 2024',
-        amount: 800,
-        status: 'paid',
-        date: '2024-01-15'
+  // Fetch tenant data from API
+  useEffect(() => {
+    const fetchTenant = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          setError('No authentication token found');
+          return;
+        }
+
+        // First, get all tenants to find the specific one
+        const response = await fetch('http://localhost:8080/hq/api/manager/tenants', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch tenants: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.status === 'success' && data.tenants) {
+          // Find the specific tenant by ID
+          const foundTenant = data.tenants.find(t => t.id === parseInt(id));
+          
+          if (foundTenant) {
+            // Transform the API data to match the component's expected format
+            const transformedTenant = {
+              id: foundTenant.id,
+              name: foundTenant.user?.username || 'Unknown',
+              email: foundTenant.user?.email || 'No email',
+              phone: foundTenant.user?.phone || 'No phone',
+              room: `${foundTenant.room_id} in room`,
+              status: 'active', // Default status
+              moveInDate: foundTenant.date_created ? new Date(foundTenant.date_created).toISOString().split('T')[0] : 'Unknown',
+              rentAmount: foundTenant.amount || 0,
+              emergencyContact: 'Not provided', // API doesn't provide this
+              emergencyPhone: 'Not provided', // API doesn't provide this
+              paymentHistory: [
+                // For now, show the single payment from the API
+                {
+                  id: foundTenant.id,
+                  month: foundTenant.date_created ? new Date(foundTenant.date_created).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Unknown',
+                  amount: foundTenant.amount || 0,
+                  status: 'paid',
+                  date: foundTenant.date_created ? new Date(foundTenant.date_created).toISOString().split('T')[0] : 'Unknown'
+                }
+              ],
+              hostelHistory: [
+                {
+                  id: foundTenant.id,
+                  hostelName: 'Current Hostel', // You might want to get this from hostel context
+                  room: `${foundTenant.room_id} in room`,
+                  period: foundTenant.date_created ? `${new Date(foundTenant.date_created).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} - Present` : 'Unknown - Present',
+                  status: 'Current'
+                }
+              ],
+              // Keep original API data for reference
+              originalData: foundTenant
+            };
+            
+            setTenant(transformedTenant);
+          } else {
+            setError('Tenant not found');
+          }
+        } else {
+          setError('Failed to load tenant data');
+        }
+        
+      } catch (err) {
+        console.error('Error fetching tenant:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
-    ],
-    hostelHistory: [
-      {
-        id: 1,
-        hostelName: 'Sunset Hostel',
-        room: '101',
-        period: 'Jan 2024 - Present',
-        status: 'Current'
-      }
-    ]
-  };
+    };
+
+    if (id) {
+      fetchTenant();
+    }
+  }, [id]);
 
   const getStatusClass = (status) => {
     switch (status) {
@@ -74,6 +119,72 @@ const TenantProfile = () => {
         return 'pending';
     }
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="tenant-profile">
+        <div className="profile-back">
+          <Link to="/tenants" className="back-button">
+            <ArrowLeft size={20} />
+            Back to Tenants
+          </Link>
+        </div>
+        <div className="loading-container">
+          <div className="loading-spinner">Loading tenant profile...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="tenant-profile">
+        <div className="profile-back">
+          <Link to="/tenants" className="back-button">
+            <ArrowLeft size={20} />
+            Back to Tenants
+          </Link>
+        </div>
+        <div className="error-container">
+          <div className="error-message">
+            <h2>Error Loading Tenant</h2>
+            <p>{error}</p>
+            <button 
+              className="btn btn-primary"
+              onClick={() => window.location.reload()}
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // No tenant found
+  if (!tenant) {
+    return (
+      <div className="tenant-profile">
+        <div className="profile-back">
+          <Link to="/tenants" className="back-button">
+            <ArrowLeft size={20} />
+            Back to Tenants
+          </Link>
+        </div>
+        <div className="error-container">
+          <div className="error-message">
+            <h2>Tenant Not Found</h2>
+            <p>The tenant you're looking for doesn't exist or has been removed.</p>
+            <Link to="/tenants" className="btn btn-primary">
+              Back to Tenants
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="tenant-profile">
@@ -212,14 +323,22 @@ const TenantProfile = () => {
 
       {/* Profile Actions */}
       <div className="profile-actions">
-        <button className="btn btn-outline">
+        <Link 
+          to={`/tenants`} 
+          state={{ editTenant: tenant }}
+          className="btn btn-outline"
+        >
           <Edit size={20} />
           Edit Profile
-        </button>
-        <button className="btn btn-primary">
+        </Link>
+        <Link 
+          to="/payments" 
+          state={{ recordPaymentFor: tenant }}
+          className="btn btn-primary"
+        >
           <CreditCard size={20} />
           Record Payment
-        </button>
+        </Link>
       </div>
     </div>
   );

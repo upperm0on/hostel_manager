@@ -1,13 +1,12 @@
 import React from 'react';
-import { Search, Filter, Plus } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
 import './TenantComponents.css';
 
 const TenantSearch = ({ 
   searchTerm, 
   onSearchChange, 
   filterStatus, 
-  onFilterChange,
-  onAddTenant 
+  onFilterChange
 }) => {
   return (
     <div className="search-filter-section">
@@ -37,10 +36,6 @@ const TenantSearch = ({
           </select>
         </div>
         
-        <button className="btn btn-primary" onClick={onAddTenant}>
-          <Plus size={20} />
-          Add Tenant
-        </button>
       </div>
     </div>
   );

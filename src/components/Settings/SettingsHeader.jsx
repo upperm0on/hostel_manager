@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit, X } from 'lucide-react';
+import { Edit, X, RefreshCw } from 'lucide-react';
 import './SettingsHeader.css';
 
 const SettingsHeader = ({ 
@@ -7,7 +7,9 @@ const SettingsHeader = ({
   subtitle, 
   showActions = false, 
   onEdit, 
-  onDelete 
+  onDelete,
+  onRefresh,
+  isRefreshing = false
 }) => {
   return (
     <div className="page-header">
@@ -18,6 +20,16 @@ const SettingsHeader = ({
         </div>
         {showActions && (
           <div className="settings-actions">
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              title="Refresh data from server"
+            >
+              <RefreshCw size={20} className={isRefreshing ? 'animate-spin' : ''} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            </button>
             <button
               type="button"
               className="btn btn-outline"

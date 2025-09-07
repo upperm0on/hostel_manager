@@ -1,8 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, ArrowRight } from 'lucide-react';
 import './DashboardComponents.css';
 
-const UpcomingEvents = ({ events }) => {
+const UpcomingEvents = () => {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Generate upcoming events based on real data
+  useEffect(() => {
+    const generateUpcomingEvents = () => {
+      const today = new Date();
+      const upcomingEvents = [];
+
+      // Add monthly rent due date (1st of next month)
+      const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+      upcomingEvents.push({
+        id: 1,
+        title: 'Monthly Rent Due',
+        date: nextMonth.toISOString().split('T')[0],
+        type: 'payment'
+      });
+
+      setEvents(upcomingEvents);
+    };
+
+    generateUpcomingEvents();
+  }, []);
   const getEventIcon = (type) => {
     switch (type) {
       case 'payment':
@@ -32,13 +55,8 @@ const UpcomingEvents = ({ events }) => {
           className="section-action"
           onClick={() => {
             // Show calendar view or navigate to events page
-            const today = new Date();
-            const events = [
-              { date: '2024-01-15', title: 'Monthly Rent Due' },
-              { date: '2024-01-18', title: 'Maintenance Inspection' },
-              { date: '2024-01-20', title: 'New Tenant Check-in' }
-            ];
-            alert(`Upcoming Events:\n${events.map(e => `${e.date}: ${e.title}`).join('\n')}`);
+            const eventList = events.map(e => `${e.date}: ${e.title}`).join('\n');
+            alert(`Upcoming Events:\n${eventList || 'No events scheduled'}`);
           }}
         >
           View Calendar

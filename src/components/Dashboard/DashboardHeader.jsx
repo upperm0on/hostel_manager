@@ -11,10 +11,10 @@ const DashboardHeader = ({ hostelInfo }) => {
             <Building size={24} className="hostel-icon" />
             <div>
               <h1 className="hostel-name">
-                {hostelInfo?.hostelDetails?.name || 'Hostel Manager'}
+                {hostelInfo?.name || 'Hostel Manager'}
               </h1>
               <p className="hostel-location">
-                {hostelInfo?.hostelDetails?.location || 'Location not set'}
+                {hostelInfo?.campus?.campus || 'Location not set'}
               </p>
             </div>
           </div>

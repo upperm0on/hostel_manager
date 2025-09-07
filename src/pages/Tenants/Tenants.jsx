@@ -1,118 +1,86 @@
-import React, { useState } from 'react';
-import { useHostel } from '../../contexts/HostelContext';
-import { useNavigate } from 'react-router-dom';
-import { Users, Plus } from 'lucide-react';
-import { TenantSearch, TenantTable, TenantModal } from '../../components/TenantComponents';
-import './Tenants.css';
+import React, { useState, useEffect } from "react";
+import { useHostel } from "../../contexts/HostelContext";
+import { useNavigate } from "react-router-dom";
+import { Users } from "lucide-react";
+import { TenantSearch, TenantTable } from "../../components/TenantComponents";
+import "./Tenants.css";
 
 const Tenants = () => {
   const { hasHostel, hostelInfo } = useHostel();
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [showTenantModal, setShowTenantModal] = useState(false);
-  const [editingTenant, setEditingTenant] = useState(null);
-  const [modalMode, setModalMode] = useState('add');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [tenants, setTenants] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Mock data for demonstration
-  const mockTenants = [
-    {
-      id: 1,
-      name: 'John Doe',
-      email: 'john.doe@email.com',
-      phone: '+1 (555) 123-4567',
-      room: 'Room 101',
-      checkInDate: '2024-01-01',
-      status: 'active',
-      rentAmount: 750,
-      nextPayment: '2024-02-01'
-    },
-    {
-      id: 2,
-      name: 'Jane Smith',
-      email: 'jane.smith@email.com',
-      phone: '+1 (555) 234-5678',
-      room: 'Room 102',
-      checkInDate: '2024-01-05',
-      status: 'active',
-      rentAmount: 750,
-      nextPayment: '2024-02-05'
-    },
-    {
-      id: 3,
-      name: 'Mike Johnson',
-      email: 'mike.johnson@email.com',
-      phone: '+1 (555) 345-6789',
-      room: 'Room 103',
-      checkInDate: '2023-12-15',
-      status: 'overdue',
-      rentAmount: 750,
-      nextPayment: '2024-01-15'
-    },
-    {
-      id: 4,
-      name: 'Sarah Wilson',
-      email: 'sarah.wilson@email.com',
-      phone: '+1 (555) 456-7890',
-      room: 'Room 104',
-      checkInDate: '2024-01-10',
-      status: 'active',
-      rentAmount: 800,
-      nextPayment: '2024-02-10'
+  // Fetch tenants from backend API
+  useEffect(() => {
+    const fetchTenants = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          console.log("No authentication token found");
+          return;
+        }
+
+        const response = await fetch(
+          "http://localhost:8080/hq/api/manager/tenants",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Token ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.log("Error response body:", errorText);
+          throw new Error(
+            `HTTP error! status: ${response.status} - ${errorText}`
+          );
+        }
+
+        const data = await response.json();
+
+        // Transform API data to match frontend expected format
+        if (data.status === "success" && data.tenants) {
+          const transformedTenants = data.tenants.map((tenant) => ({
+            id: tenant.id,
+            name: tenant.user?.username || "Unknown",
+            email: tenant.user?.email || "No email",
+            phone: tenant.user?.phone || "No phone",
+            room: `${tenant.room_id} in room`,
+            checkInDate: tenant.date_created
+              ? new Date(tenant.date_created).toISOString().split("T")[0]
+              : "Unknown",
+            status: "active", // Default status since API doesn't provide this
+            rentAmount: tenant.amount || 0,
+            // Keep original API data for reference
+            originalData: tenant,
+          }));
+
+          setTenants(transformedTenants);
+        }
+      } catch (error) {
+        console.error("Error fetching tenants:", error);
+        setTenants([]); // Set empty array on error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Only fetch if user is authenticated and has a hostel
+    if (hasHostel) {
+      fetchTenants();
     }
-  ];
+  }, [hasHostel]);
 
   const handleSetupHostel = () => {
-    navigate('/settings');
-  };
-
-  const handleAddTenant = () => {
-    setModalMode('add');
-    setEditingTenant(null);
-    setShowTenantModal(true);
-  };
-
-  const handleEditTenant = (tenant) => {
-    setModalMode('edit');
-    setEditingTenant(tenant);
-    setShowTenantModal(true);
-  };
-
-  const handleSaveTenant = async (tenantData) => {
-    try {
-      if (modalMode === 'add') {
-        // Add new tenant logic
-        const newTenant = {
-          id: Date.now(),
-          ...tenantData,
-          status: 'active'
-        };
-        console.log('Adding new tenant:', newTenant);
-        // In a real app, this would save to backend
-      } else {
-        // Edit tenant logic
-        const updatedTenant = { ...editingTenant, ...tenantData };
-        console.log('Updating tenant:', updatedTenant);
-        // In a real app, this would update in backend
-      }
-    } catch (error) {
-      console.error('Error saving tenant:', error);
-    }
-  };
-
-  const handleCloseModal = () => {
-    setShowTenantModal(false);
-    setEditingTenant(null);
-  };
-
-  const handleDeleteTenant = async (tenant) => {
-    try {
-      console.log('Deleting tenant:', tenant);
-      // In a real app, this would delete from backend
-      // For now, just log the action
-    } catch (error) {
-      console.error('Error deleting tenant:', error);
-    }
+    navigate("/settings");
   };
 
   // If no hostel exists, show setup message
@@ -127,12 +95,15 @@ const Tenants = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="no-hostel-tenants">
           <div className="no-hostel-content">
             <Users size={64} className="no-hostel-icon" />
             <h2>Tenant Management Not Available</h2>
-            <p>You need to set up your hostel first to manage tenants, track payments, and handle check-ins/check-outs.</p>
+            <p>
+              You need to set up your hostel first to manage tenants, track
+              payments, and handle check-ins/check-outs.
+            </p>
             <div className="tenants-actions">
               <button onClick={handleSetupHostel} className="btn btn-primary">
                 <Plus size={20} />
@@ -145,13 +116,15 @@ const Tenants = () => {
     );
   }
 
-  const filteredTenants = mockTenants.filter(tenant => {
-    const matchesSearch = tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         tenant.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         tenant.room.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesFilter = filterStatus === 'all' || tenant.status === filterStatus;
-    
+  const filteredTenants = tenants.filter((tenant) => {
+    const matchesSearch =
+      tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tenant.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tenant.room.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesFilter =
+      filterStatus === "all" || tenant.status === filterStatus;
+
     return matchesSearch && matchesFilter;
   });
 
@@ -161,7 +134,10 @@ const Tenants = () => {
         <div className="page-header-content">
           <div>
             <h1 className="page-title">Tenants</h1>
-            <p className="page-subtitle">Manage {hostelInfo?.hostelDetails?.name || 'your hostel'} tenants</p>
+            <p className="page-subtitle">
+              Manage {hostelInfo?.name || "your hostel"} tenants
+              {loading ? " (Loading...)" : ` (${tenants.length} total)`}
+            </p>
           </div>
         </div>
       </div>
@@ -172,24 +148,16 @@ const Tenants = () => {
         onSearchChange={setSearchTerm}
         filterStatus={filterStatus}
         onFilterChange={setFilterStatus}
-        onAddTenant={handleAddTenant}
       />
 
       {/* Tenant Table Component */}
-      <TenantTable
-        tenants={filteredTenants}
-        onEdit={handleEditTenant}
-        onDelete={handleDeleteTenant}
-      />
-
-      {/* Tenant Modal */}
-      <TenantModal
-        isOpen={showTenantModal}
-        onClose={handleCloseModal}
-        tenant={editingTenant}
-        onSave={handleSaveTenant}
-        mode={modalMode}
-      />
+      {loading ? (
+        <div className="loading-container">
+          <div className="loading-spinner">Loading tenants...</div>
+        </div>
+      ) : (
+        <TenantTable tenants={filteredTenants} />
+      )}
     </div>
   );
 };

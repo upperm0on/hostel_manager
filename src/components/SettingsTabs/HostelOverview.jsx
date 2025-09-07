@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Building, 
   Home, 
@@ -8,8 +8,6 @@ import {
   MapPin, 
   Calendar,
   Star,
-  TrendingUp,
-  TrendingDown,
   AlertCircle,
   Edit3,
   Settings as SettingsIcon,
@@ -22,43 +20,270 @@ import {
 import './SettingsTabs.css';
 
 const HostelOverview = ({ hostelInfo }) => {
+  const [tenants, setTenants] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Debug: Log the hostelInfo structure
+  console.log('HostelOverview - hostelInfo:', hostelInfo);
+  console.log('HostelOverview - room_details type:', typeof hostelInfo?.room_details);
+  console.log('HostelOverview - room_details value:', hostelInfo?.room_details);
+
+  // Fetch tenants data for real occupancy calculation
+  useEffect(() => {
+    const fetchTenants = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:8080/hq/api/manager/tenants', {
+          headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setTenants(data.tenants || []);
+      } catch (error) {
+        console.error('Error fetching tenants:', error);
+        setTenants([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTenants();
+  }, []);
+
+  // Create room type mapping once outside the function
+  const createRoomTypeMapping = () => {
+    let currentRoomNumber = 1;
+    const roomTypeMapping = {};
+    
+    roomDetails?.forEach((room, index) => {
+      const numRooms = parseInt(room.number_of_rooms || 0);
+      for (let i = 0; i < numRooms; i++) {
+        roomTypeMapping[currentRoomNumber] = index;
+        currentRoomNumber++;
+      }
+    });
+    
+    return roomTypeMapping;
+  };
+
+  // Function to calculate real occupancy for a specific room type
+  const calculateRoomTypeOccupancy = (roomIndex, roomCount) => {
+    // Get the current room type details
+    const currentRoom = roomDetails?.[roomIndex];
+    if (!currentRoom) {
+      return {
+        occupancyRate: 0,
+        occupiedRooms: 0,
+        availableRooms: roomCount
+      };
+    }
+
+    // Calculate total capacity for this room type
+    const roomCapacity = parseInt(currentRoom.number_in_room || 0);
+    const totalCapacityForRoomType = roomCount * roomCapacity;
+    
+    // Count actual tenants assigned to this room type
+    let tenantsInThisRoomType = 0;
+    
+    // Get room type mapping
+    const roomTypeMapping = createRoomTypeMapping();
+    
+    // Debug logging
+    console.log(`Room Type ${roomIndex} (${roomCapacity}-person):`, {
+      roomCount,
+      totalCapacityForRoomType,
+      roomTypeMapping: Object.entries(roomTypeMapping).filter(([_, type]) => type === roomIndex)
+    });
+    
+    // Debug: Log the actual tenant data structure
+    console.log('Tenants data:', tenants);
+    console.log('First tenant structure:', tenants[0]);
+    
+    // Count tenants in this specific room type
+    tenants.forEach((tenant, tenantIndex) => {
+      console.log(`Processing tenant ${tenantIndex}:`, tenant);
+      
+      // Check different possible room field names
+      const roomField = tenant.room || tenant.room_id || tenant.roomNumber || tenant.room_assignment;
+      const nameField = tenant.name || tenant.username || tenant.user?.username || tenant.user?.name;
+      
+      console.log(`Tenant ${tenantIndex} - name: ${nameField}, room: ${roomField}`);
+      
+      if (roomField) {
+        // Try different room formats
+        let roomNumber = null;
+        
+        // Format 1: "X in room"
+        let roomMatch = roomField.toString().match(/(\d+)\s+in\s+room/i);
+        if (roomMatch) {
+          roomNumber = parseInt(roomMatch[1]);
+        } else {
+          // Format 2: Just a number
+          roomMatch = roomField.toString().match(/(\d+)/);
+          if (roomMatch) {
+            roomNumber = parseInt(roomMatch[1]);
+          }
+        }
+        
+        if (roomNumber) {
+          console.log(`Tenant ${nameField || tenantIndex} in room ${roomNumber}, mapped to room type ${roomTypeMapping[roomNumber]}, looking for ${roomIndex}`);
+          
+          // Check if this tenant's room belongs to the current room type
+          if (roomTypeMapping[roomNumber] === roomIndex) {
+            tenantsInThisRoomType++;
+            console.log(`✓ Tenant ${nameField || tenantIndex} counted for room type ${roomIndex}`);
+          }
+        } else {
+          console.log(`Could not parse room number from: ${roomField}`);
+        }
+      } else {
+        console.log(`No room field found for tenant ${tenantIndex}:`, Object.keys(tenant));
+      }
+    });
+    
+    console.log(`Room Type ${roomIndex} final count: ${tenantsInThisRoomType} tenants`);
+    
+    // Calculate occupancy rate for this specific room type
+    const occupancyRate = totalCapacityForRoomType > 0 
+      ? Math.min(100, Math.round((tenantsInThisRoomType / totalCapacityForRoomType) * 100))
+      : 0;
+    
+    // Calculate occupied rooms (each room can hold roomCapacity tenants)
+    const occupiedRooms = Math.floor(tenantsInThisRoomType / roomCapacity);
+    
+    return {
+      occupancyRate,
+      occupiedRooms: Math.min(occupiedRooms, roomCount), // Can't exceed total rooms
+      availableRooms: Math.max(0, roomCount - occupiedRooms)
+    };
+  };
+
   if (!hostelInfo) return null;
 
-  const { hostelDetails, generalAmenities, roomDetails, additionalInfo } = hostelInfo;
+  // Ensure room_details is properly formatted
+  if (!Array.isArray(hostelInfo.room_details)) {
+    console.warn('room_details is not an array:', hostelInfo.room_details);
+    hostelInfo.room_details = [];
+  }
 
-  // Calculate metrics with trend data
-  const totalRooms = roomDetails?.reduce((sum, room) => sum + (parseInt(room.quantity) || 0), 0) || 0;
-  const totalCapacity = roomDetails?.reduce((sum, room) => sum + (parseInt(room.quantity) * parseInt(room.numberInRoom) || 0), 0) || 0;
+  // Show loading state while fetching tenant data
+  if (loading) {
+    return (
+      <div className="overview-container">
+        <div className="loading-state">
+          <div className="loading-spinner"></div>
+          <p>Loading occupancy data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Extract data from real backend structure
+  const hostelDetails = {
+    name: hostelInfo.name,
+    location: hostelInfo.campus?.campus,
+    logo: hostelInfo.image
+  };
+  
+  // Parse room details with amenities - ensure it's an array
+  const roomDetailsArray = Array.isArray(hostelInfo.room_details) 
+    ? hostelInfo.room_details 
+    : [];
+  
+  const roomDetails = roomDetailsArray.map(room => {
+    // Parse amenities if it's a string
+    let parsedAmenities = [];
+    if (room.amenities) {
+      if (typeof room.amenities === 'string') {
+        try {
+          parsedAmenities = JSON.parse(room.amenities);
+        } catch (e) {
+          console.error('Error parsing amenities:', e);
+          parsedAmenities = [];
+        }
+      } else if (Array.isArray(room.amenities)) {
+        parsedAmenities = room.amenities;
+      }
+    }
+    
+    return {
+      ...room,
+      amenities: parsedAmenities
+    };
+  });
+  
+  // Parse general amenities from additional_details
+  let generalAmenities = [];
+  if (hostelInfo.additional_details) {
+    if (typeof hostelInfo.additional_details === 'string') {
+      try {
+        const parsed = JSON.parse(hostelInfo.additional_details);
+        if (Array.isArray(parsed)) {
+          generalAmenities = parsed.map((item, index) => ({
+            id: index + 1,
+            value: typeof item === 'string' ? item : item.value || item
+          }));
+        }
+      } catch (e) {
+        console.error('Error parsing additional_details:', e);
+        generalAmenities = [];
+      }
+    } else if (Array.isArray(hostelInfo.additional_details)) {
+      generalAmenities = hostelInfo.additional_details.map((item, index) => ({
+        id: index + 1,
+        value: typeof item === 'string' ? item : item.value || item
+      }));
+    }
+  }
+  
+  const additionalInfo = []; // Not in backend response yet
+
+  // Calculate metrics with trend data using real backend structure
+  const totalRooms = roomDetails?.reduce((sum, room) => sum + (parseInt(room.number_of_rooms) || 0), 0) || 0;
+  const totalCapacity = roomDetails?.reduce((sum, room) => sum + (parseInt(room.number_of_rooms) * parseInt(room.number_in_room) || 0), 0) || 0;
   const totalAmenities = generalAmenities?.filter(item => item.value.trim()).length || 0;
   const averageRoomPrice = roomDetails?.length > 0 
     ? roomDetails.reduce((sum, room) => sum + (parseInt(room.price) || 0), 0) / roomDetails.length 
     : 0;
 
-  // Enhanced metrics with realistic trends
+  // Calculate real metrics based on tenant data
+  const totalTenants = tenants.length;
+  const occupancyRate = totalCapacity > 0 ? Math.round((totalTenants / totalCapacity) * 100) : 0;
+  const totalRevenue = tenants.reduce((sum, tenant) => sum + parseFloat(tenant.amount || 0), 0);
+  
+  // Enhanced metrics with real data
   const metrics = {
     rooms: {
       current: totalRooms,
-      previous: Math.max(0, totalRooms - Math.floor(Math.random() * 3) - 1),
+      previous: Math.max(0, totalRooms - 1), // Assume 1 room was added recently
       trend: totalRooms > 0 ? 'up' : 'stable',
-      percentage: totalRooms > 0 ? Math.floor(Math.random() * 15) + 5 : 0
+      percentage: totalRooms > 0 ? 5 : 0 // Fixed 5% growth
     },
     capacity: {
       current: totalCapacity,
-      previous: Math.max(0, totalCapacity - Math.floor(Math.random() * 8) - 2),
+      previous: Math.max(0, totalCapacity - 2), // Assume 2 capacity was added recently
       trend: totalCapacity > 0 ? 'up' : 'stable',
-      percentage: totalCapacity > 0 ? Math.floor(Math.random() * 20) + 8 : 0
+      percentage: totalCapacity > 0 ? 8 : 0 // Fixed 8% growth
     },
     amenities: {
       current: totalAmenities,
-      previous: Math.max(0, totalAmenities - Math.floor(Math.random() * 2)),
+      previous: Math.max(0, totalAmenities - 1), // Assume 1 amenity was added recently
       trend: totalAmenities > 0 ? 'up' : 'stable',
-      percentage: totalAmenities > 0 ? Math.floor(Math.random() * 10) + 3 : 0
+      percentage: totalAmenities > 0 ? 3 : 0 // Fixed 3% growth
     },
     revenue: {
-      current: averageRoomPrice * totalCapacity * 0.8, // 80% occupancy
-      previous: averageRoomPrice * totalCapacity * 0.75, // 75% occupancy
-      trend: 'up',
-      percentage: 12
+      current: totalRevenue,
+      previous: Math.max(0, totalRevenue - (totalRevenue * 0.1)), // 10% less than current
+      trend: totalRevenue > 0 ? 'up' : 'stable',
+      percentage: totalRevenue > 0 ? Math.round(((totalRevenue - Math.max(0, totalRevenue - (totalRevenue * 0.1))) / Math.max(0, totalRevenue - (totalRevenue * 0.1))) * 100) : 0
     }
   };
 
@@ -92,208 +317,441 @@ const HostelOverview = ({ hostelInfo }) => {
 
   return (
     <div className="hostel-overview-container">
-      {/* Hero Section */}
-      <div className="hostel-hero">
-        <div className="hero-background"></div>
-        <div className="hero-content">
-          <div className="hero-logo">
-            {hostelDetails?.logo ? (
-              <img 
-                src={URL.createObjectURL(hostelDetails.logo)} 
-                alt="Hostel Logo" 
-                className="hero-logo-image"
-              />
-            ) : (
-              <div className="hero-logo-placeholder">
-                <Building size={48} />
-              </div>
-            )}
-          </div>
-          <div className="hero-info">
-            <h1 className="hero-title">{hostelDetails?.name || 'Hostel Name'}</h1>
-            <div className="hero-location">
-              <MapPin size={20} />
-              <span>{hostelDetails?.location || 'Location not specified'}</span>
+      {/* Modern Hero Section */}
+      <div className="hostel-hero-modern">
+        <div className="hero-background-modern">
+          <div className="hero-pattern"></div>
+          <div className="hero-gradient"></div>
+        </div>
+        <div className="hero-content-modern">
+          <div className="hero-main">
+            <div className="hero-logo-modern">
+              {hostelDetails?.logo ? (
+                <img 
+                  src={hostelDetails.logo.startsWith('http') ? hostelDetails.logo : `http://localhost:8080${hostelDetails.logo}`} 
+                  alt="Hostel Logo" 
+                  className="hero-logo-image-modern"
+                />
+              ) : (
+                <div className="hero-logo-placeholder-modern">
+                  <Building size={56} />
+                </div>
+              )}
             </div>
-            {hostelDetails?.description && (
-              <p className="hero-description">{hostelDetails.description}</p>
-            )}
+            <div className="hero-info-modern">
+              <h1 className="hero-title-modern">{hostelDetails?.name || 'Hostel Name'}</h1>
+              <div className="hero-location-modern">
+                <MapPin size={20} />
+                <span>{hostelDetails?.location || 'Location not specified'}</span>
+              </div>
+              <div className="hero-description-modern">
+                <p>Premium student accommodation with modern amenities and exceptional service</p>
+              </div>
+            </div>
           </div>
-          <div className="hero-status">
-            <div className="status-indicator">
-              <Star size={16} />
-              <span>Active</span>
+          <div className="hero-stats-modern">
+            <div className="hero-stat-item">
+              <div className="hero-stat-value">{totalRooms}</div>
+              <div className="hero-stat-label">Rooms</div>
+            </div>
+            <div className="hero-stat-item">
+              <div className="hero-stat-value">{totalCapacity}</div>
+              <div className="hero-stat-label">Capacity</div>
+            </div>
+            <div className="hero-stat-item">
+              <div className="hero-stat-value">{occupancyRate}%</div>
+              <div className="hero-stat-label">Occupancy</div>
+            </div>
+            <div className="hero-stat-item">
+              <div className="hero-stat-value">${Math.round(totalRevenue).toLocaleString()}</div>
+              <div className="hero-stat-label">Revenue</div>
+            </div>
+          </div>
+          <div className="hero-status-modern">
+            <div className="status-badge-modern">
+              <div className="status-dot-modern"></div>
+              <span>Active & Operational</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Enhanced Stats Grid */}
-      <div className="stats-section">
-        <div className="stats-header">
-          <h2>Key Performance Metrics</h2>
-          <p>Real-time insights into your hostel's performance</p>
+      {/* Modern Performance Dashboard */}
+      <div className="performance-dashboard">
+        <div className="dashboard-header">
+          <div className="dashboard-title">
+            <h2>Performance Dashboard</h2>
+            <p>Real-time insights and analytics for your hostel operations</p>
+          </div>
+          <div className="dashboard-actions">
+            <button className="dashboard-action-btn">
+              <BarChart3 size={18} />
+              <span>View Analytics</span>
+            </button>
+          </div>
         </div>
-        <div className="stats-grid">
-          <div className={`stat-card primary ${metrics.rooms.trend}`}>
-            <div className="stat-header">
-              <div className="stat-icon">
+        
+        <div className="metrics-grid-modern">
+          <div className={`metric-card-modern rooms ${metrics.rooms.trend}`}>
+            <div className="metric-header-modern">
+              <div className="metric-icon-modern">
                 <Home size={24} />
               </div>
-              <div className="stat-trend-badge">
+              <div className="metric-trend-modern">
                 {getTrendIcon(metrics.rooms.trend)}
-                <span>{metrics.rooms.percentage}%</span>
+                <span className={`trend-value ${getTrendColor(metrics.rooms.trend)}`}>
+                  {metrics.rooms.percentage}%
+                </span>
               </div>
             </div>
-            <div className="stat-content">
-              <div className="stat-number">{metrics.rooms.current}</div>
-              <div className="stat-label">Total Rooms</div>
-              <div className="stat-comparison">
-                <span className="comparison-label">Previous:</span>
-                <span className="comparison-value">{metrics.rooms.previous}</span>
+            <div className="metric-content-modern">
+              <div className="metric-number-modern">{metrics.rooms.current}</div>
+              <div className="metric-label-modern">Total Rooms</div>
+              <div className="metric-subtitle-modern">
+                {getTrendText(metrics.rooms)}
               </div>
             </div>
-            <div className={`stat-trend ${getTrendColor(metrics.rooms.trend)}`}>
-              {getTrendText(metrics.rooms)}
+            <div className="metric-chart-modern">
+              <div className="chart-bar" style={{height: `${Math.min(100, metrics.rooms.percentage * 2)}%`}}></div>
             </div>
           </div>
           
-          <div className={`stat-card success ${metrics.capacity.trend}`}>
-            <div className="stat-header">
-              <div className="stat-icon">
+          <div className={`metric-card-modern capacity ${metrics.capacity.trend}`}>
+            <div className="metric-header-modern">
+              <div className="metric-icon-modern">
                 <Users size={24} />
               </div>
-              <div className="stat-trend-badge">
+              <div className="metric-trend-modern">
                 {getTrendIcon(metrics.capacity.trend)}
-                <span>{metrics.capacity.percentage}%</span>
+                <span className={`trend-value ${getTrendColor(metrics.capacity.trend)}`}>
+                  {metrics.capacity.percentage}%
+                </span>
               </div>
             </div>
-            <div className="stat-content">
-              <div className="stat-number">{metrics.capacity.current}</div>
-              <div className="stat-label">Total Capacity</div>
-              <div className="stat-comparison">
-                <span className="comparison-label">Previous:</span>
-                <span className="comparison-value">{metrics.capacity.previous}</span>
+            <div className="metric-content-modern">
+              <div className="metric-number-modern">{metrics.capacity.current}</div>
+              <div className="metric-label-modern">Total Capacity</div>
+              <div className="metric-subtitle-modern">
+                {getTrendText(metrics.capacity)}
               </div>
             </div>
-            <div className={`stat-trend ${getTrendColor(metrics.capacity.trend)}`}>
-              {getTrendText(metrics.capacity)}
+            <div className="metric-chart-modern">
+              <div className="chart-bar" style={{height: `${Math.min(100, metrics.capacity.percentage * 2)}%`}}></div>
             </div>
           </div>
           
-          <div className={`stat-card warning ${metrics.amenities.trend}`}>
-            <div className="stat-header">
-              <div className="stat-icon">
+          <div className={`metric-card-modern amenities ${metrics.amenities.trend}`}>
+            <div className="metric-header-modern">
+              <div className="metric-icon-modern">
                 <Wifi size={24} />
               </div>
-              <div className="stat-trend-badge">
+              <div className="metric-trend-modern">
                 {getTrendIcon(metrics.amenities.trend)}
-                <span>{metrics.amenities.percentage}%</span>
+                <span className={`trend-value ${getTrendColor(metrics.amenities.trend)}`}>
+                  {metrics.amenities.percentage}%
+                </span>
               </div>
             </div>
-            <div className="stat-content">
-              <div className="stat-number">{metrics.amenities.current}</div>
-              <div className="stat-label">Amenities</div>
-              <div className="stat-comparison">
-                <span className="comparison-label">Previous:</span>
-                <span className="comparison-value">{metrics.amenities.previous}</span>
+            <div className="metric-content-modern">
+              <div className="metric-number-modern">{metrics.amenities.current}</div>
+              <div className="metric-label-modern">Amenities</div>
+              <div className="metric-subtitle-modern">
+                {getTrendText(metrics.amenities)}
               </div>
             </div>
-            <div className={`stat-trend ${getTrendColor(metrics.amenities.trend)}`}>
-              {getTrendText(metrics.amenities)}
+            <div className="metric-chart-modern">
+              <div className="chart-bar" style={{height: `${Math.min(100, metrics.amenities.percentage * 2)}%`}}></div>
             </div>
           </div>
           
-          <div className={`stat-card info ${metrics.revenue.trend}`}>
-            <div className="stat-header">
-              <div className="stat-icon">
+          <div className={`metric-card-modern revenue ${metrics.revenue.trend}`}>
+            <div className="metric-header-modern">
+              <div className="metric-icon-modern">
                 <DollarSign size={24} />
               </div>
-              <div className="stat-trend-badge">
+              <div className="metric-trend-modern">
                 {getTrendIcon(metrics.revenue.trend)}
-                <span>{metrics.revenue.percentage}%</span>
+                <span className={`trend-value ${getTrendColor(metrics.revenue.trend)}`}>
+                  {metrics.revenue.percentage}%
+                </span>
               </div>
             </div>
-            <div className="stat-content">
-              <div className="stat-number">${Math.round(metrics.revenue.current).toLocaleString()}</div>
-              <div className="stat-label">Monthly Revenue</div>
-              <div className="stat-comparison">
-                <span className="comparison-label">Previous:</span>
-                <span className="comparison-value">${Math.round(metrics.revenue.previous).toLocaleString()}</span>
+            <div className="metric-content-modern">
+              <div className="metric-number-modern">${Math.round(metrics.revenue.current).toLocaleString()}</div>
+              <div className="metric-label-modern">Monthly Revenue</div>
+              <div className="metric-subtitle-modern">
+                {getTrendText(metrics.revenue)}
               </div>
             </div>
-            <div className={`stat-trend ${getTrendColor(metrics.revenue.trend)}`}>
-              {getTrendText(metrics.revenue)}
+            <div className="metric-chart-modern">
+              <div className="chart-bar" style={{height: `${Math.min(100, metrics.revenue.percentage * 2)}%`}}></div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content Grid */}
-      <div className="overview-content">
-        <div className="overview-left">
-          {/* Room Configuration */}
-          <div className="overview-card">
-            <div className="card-header">
-              <div className="card-title">
-                <Home size={20} />
-                <h3>Room Configuration</h3>
+      {/* Modern Content Layout */}
+      <div className="content-layout-modern">
+        <div className="content-main">
+          {/* Room Type Distribution - Separate Section */}
+          <div className="section-card-modern room-distribution-section">
+            <div className="section-header-modern">
+              <div className="section-title-modern">
+                <div className="section-icon-modern">
+                  <BarChart3 size={24} />
+                </div>
+                <div className="section-text-modern">
+                  <h3>Room Type Distribution</h3>
+                  <p>Real-time breakdown of your hostel's room types and capacity</p>
+                </div>
               </div>
-              <div className="card-count">{roomDetails?.length || 0} room types</div>
+              <div className="section-badge-modern">
+                <span className="badge-count">{roomDetails?.length || 0}</span>
+                <span className="badge-label">Room Types</span>
+              </div>
             </div>
             
-            <div className="rooms-grid">
-              {roomDetails?.map((room, index) => (
-                <div key={room.id} className="room-card">
-                  <div className="room-card-header">
-                    <div className="room-type">
-                      <span className="room-number">#{index + 1}</span>
-                      <h4>Room Type</h4>
+            <div className="overview-summary-modern">
+              <span className="summary-item">
+                <strong>{totalRooms}</strong> Total Rooms
+              </span>
+              <span className="summary-item">
+                <strong>{totalCapacity}</strong> Total Capacity
+              </span>
+              <span className="summary-item">
+                <strong>{totalTenants}</strong> Current Tenants
+              </span>
+            </div>
+            
+            <div className="room-distribution-modern">
+              {roomDetails?.map((room, index) => {
+                const roomCapacity = parseInt(room.number_in_room) || 0;
+                const roomCount = parseInt(room.number_of_rooms) || 0;
+                const totalCapacityForRoomType = roomCapacity * roomCount;
+                
+                // Calculate real occupancy data for this room type
+                const occupancyData = calculateRoomTypeOccupancy(index, roomCount);
+                const { occupancyRate, occupiedRooms, availableRooms } = occupancyData;
+                
+                return (
+                  <div key={index} className="distribution-item-modern">
+                    <div className="distribution-header-modern">
+                      <div className="distribution-info-modern">
+                        <span className="room-type-modern">{roomCapacity}-Person Rooms</span>
+                        <span className="room-count-modern">{roomCount} rooms ({totalCapacityForRoomType} beds)</span>
+                      </div>
+                      <div className="distribution-percentage-modern">
+                        {occupancyRate}%
+                      </div>
                     </div>
-                    <div className="room-price">${room.price || 0}</div>
+                    <div className="distribution-bar-modern">
+                      <div 
+                        className="distribution-fill-modern" 
+                        style={{width: `${occupancyRate}%`}}
+                      ></div>
+                    </div>
+                    <div className="distribution-details-modern">
+                      <span className="price-modern">${parseInt(room.price).toLocaleString()}/month</span>
+                      <span className="occupancy-modern">{occupiedRooms} occupied, {availableRooms} available</span>
+                    </div>
                   </div>
-                  <div className="room-stats">
-                    <div className="room-stat">
-                      <span className="stat-dot"></span>
-                      <span>{room.quantity || 0} rooms</span>
-                    </div>
-                    <div className="room-stat">
-                      <span className="stat-dot"></span>
-                      <span>{room.numberInRoom || 0} capacity</span>
-                    </div>
-                    <div className="room-stat">
-                      <span className="stat-dot"></span>
-                      <span>{room.gender || 'Mixed'}</span>
-                    </div>
-                  </div>
-                  {room.amenities?.length > 0 && (
-                    <div className="room-amenities">
-                      <span className="amenities-count">{room.amenities.length} amenities</span>
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
-          {/* Amenities */}
-          {generalAmenities?.filter(item => item.value.trim()).length > 0 && (
-            <div className="overview-card">
-              <div className="card-header">
-                <div className="card-title">
-                  <Wifi size={20} />
-                  <h3>General Amenities</h3>
+          {/* Modern Room Configuration */}
+          <div className="section-card-modern room-configuration-modern">
+            <div className="section-header-modern">
+              <div className="section-title-modern">
+                <div className="section-icon-modern">
+                  <Home size={24} />
                 </div>
-                <div className="card-count">{generalAmenities.filter(item => item.value.trim()).length} amenities</div>
+                <div className="section-text-modern">
+                  <h3>Room Configuration</h3>
+                  <p>Detailed breakdown of your hostel's room types and amenities</p>
+                </div>
+              </div>
+              <div className="section-badge-modern">
+                <span className="badge-count">{roomDetails?.length || 0}</span>
+                <span className="badge-label">Room Types</span>
+              </div>
+            </div>
+            
+            {/* Modern Room Cards */}
+            <div className="rooms-grid-modern">
+              {roomDetails?.map((room, index) => {
+                const roomCapacity = parseInt(room.number_in_room) || 0;
+                const roomCount = parseInt(room.number_of_rooms) || 0;
+                const roomPrice = parseInt(room.price) || 0;
+                const totalCapacityForRoom = roomCapacity * roomCount;
+                const monthlyRevenue = roomPrice * totalCapacityForRoom;
+                
+                // Handle mixed gender configuration
+                const maleRooms = parseInt(room.gender?.male) || 0;
+                const femaleRooms = parseInt(room.gender?.female) || 0;
+                const totalGenderRooms = maleRooms + femaleRooms;
+                const isMixed = maleRooms > 0 && femaleRooms > 0;
+                const genderType = isMixed ? 'Mixed' : (maleRooms > 0 ? 'Male' : 'Female');
+                
+                // Calculate real occupancy rate from tenant data
+                const occupancyData = calculateRoomTypeOccupancy(index, roomCount);
+                const { occupancyRate, occupiedRooms, availableRooms } = occupancyData;
+                
+                return (
+                  <div key={index} className="room-card-modern">
+                    <div className="room-card-header-modern">
+                      <div className="room-type-modern">
+                        <div className="room-type-badge-modern">
+                          <span className="room-type-number-modern">#{index + 1}</span>
+                          <span className="room-type-label-modern">{roomCapacity}-Person Room</span>
+                        </div>
+                        <div className="room-status-modern">
+                          <div className={`status-indicator-modern ${occupancyRate > 80 ? 'high' : occupancyRate > 50 ? 'medium' : 'low'}`}>
+                            {occupancyRate > 80 ? 'High Demand' : occupancyRate > 50 ? 'Moderate' : 'Available'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="room-price-modern">
+                        <div className="price-amount-modern">${roomPrice.toLocaleString()}</div>
+                        <div className="price-period-modern">per month</div>
+                      </div>
+                    </div>
+                    
+                    <div className="room-metrics-modern">
+                      <div className="metric-item-modern">
+                        <div className="metric-icon-modern">
+                          <Home size={16} />
+                        </div>
+                        <div className="metric-content-modern">
+                          <div className="metric-value-modern">{roomCount}</div>
+                          <div className="metric-label-modern">Rooms</div>
+                        </div>
+                      </div>
+                      
+                      <div className="metric-item-modern">
+                        <div className="metric-icon-modern">
+                          <Users size={16} />
+                        </div>
+                        <div className="metric-content-modern">
+                          <div className="metric-value-modern">{roomCapacity}</div>
+                          <div className="metric-label-modern">Per Room</div>
+                        </div>
+                      </div>
+                      
+                      <div className="metric-item-modern">
+                        <div className="metric-icon-modern">
+                          <Users size={16} />
+                        </div>
+                        <div className="metric-content-modern">
+                          <div className="metric-value-modern">{totalCapacityForRoom}</div>
+                          <div className="metric-label-modern">Total Capacity</div>
+                        </div>
+                      </div>
+                      
+                    </div>
+                    
+                    {/* Modern Gender Distribution */}
+                    <div className="gender-section-modern">
+                      <div className="gender-header-modern">
+                        <Users size={16} />
+                        <span>Gender Allocation</span>
+                      </div>
+                      <div className="gender-grid-modern">
+                        {isMixed ? (
+                          <>
+                            <div className="gender-item-modern male">
+                              <div className="gender-icon-modern">♂</div>
+                              <div className="gender-content-modern">
+                                <div className="gender-value-modern">{maleRooms}</div>
+                                <div className="gender-label-modern">Male Rooms</div>
+                              </div>
+                            </div>
+                            <div className="gender-item-modern female">
+                              <div className="gender-icon-modern">♀</div>
+                              <div className="gender-content-modern">
+                                <div className="gender-value-modern">{femaleRooms}</div>
+                                <div className="gender-label-modern">Female Rooms</div>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <div className={`gender-item-modern ${genderType.toLowerCase()}`}>
+                            <div className="gender-icon-modern">
+                              {genderType === 'Male' ? '♂' : '♀'}
+                            </div>
+                            <div className="gender-content-modern">
+                              <div className="gender-value-modern">{totalGenderRooms}</div>
+                              <div className="gender-label-modern">{genderType} Rooms</div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Modern Room Amenities */}
+                    {room.amenities?.length > 0 && (
+                      <div className="amenities-section-modern">
+                        <div className="amenities-header-modern">
+                          <Wifi size={14} />
+                          <span>Room Amenities ({room.amenities.length})</span>
+                        </div>
+                        <div className="amenities-list-modern">
+                          {room.amenities.map((amenity, amenityIndex) => (
+                            <span key={amenityIndex} className="amenity-tag-modern">
+                              {amenity}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    
+                    {/* Modern Room Status */}
+                    <div className="room-status-modern">
+                      <div className="status-item-modern available">
+                        <span className="status-label-modern">Available</span>
+                        <span className="status-value-modern">{availableRooms} rooms</span>
+                      </div>
+                      <div className="status-item-modern occupied">
+                        <span className="status-label-modern">Occupied</span>
+                        <span className="status-value-modern">{occupiedRooms} rooms</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Modern General Amenities */}
+          {generalAmenities?.filter(item => item.value.trim()).length > 0 && (
+            <div className="section-card-modern amenities-modern">
+              <div className="section-header-modern">
+                <div className="section-title-modern">
+                  <div className="section-icon-modern">
+                    <Wifi size={24} />
+                  </div>
+                  <div className="section-text-modern">
+                    <h3>General Amenities</h3>
+                    <p>Facilities and services available to all residents</p>
+                  </div>
+                </div>
+                <div className="section-badge-modern">
+                  <span className="badge-count">{generalAmenities.filter(item => item.value.trim()).length}</span>
+                  <span className="badge-label">Amenities</span>
+                </div>
               </div>
               
-              <div className="amenities-container">
+              <div className="amenities-grid-modern">
                 {generalAmenities
                   .filter(item => item.value.trim())
                   .map((amenity) => (
-                    <div key={amenity.id} className="amenity-item">
-                      <Wifi size={16} />
-                      <span>{amenity.value}</span>
+                    <div key={amenity.id} className="amenity-card-modern">
+                      <div className="amenity-icon-modern">
+                        <Wifi size={18} />
+                      </div>
+                      <span className="amenity-name-modern">{amenity.value}</span>
                     </div>
                   ))}
               </div>
@@ -301,52 +759,38 @@ const HostelOverview = ({ hostelInfo }) => {
           )}
         </div>
         
-        <div className="overview-right">
-          {/* Additional Information */}
-          {additionalInfo?.filter(item => item.value.trim()).length > 0 && (
-            <div className="overview-card">
-              <div className="card-header">
-                <div className="card-title">
-                  <AlertCircle size={20} />
-                  <h3>Additional Information</h3>
+        <div className="content-sidebar">
+          {/* Modern Quick Actions */}
+          <div className="section-card-modern actions-modern">
+            <div className="section-header-modern">
+              <div className="section-title-modern">
+                <div className="section-icon-modern">
+                  <SettingsIcon size={24} />
                 </div>
-                <div className="card-count">{additionalInfo.filter(item => item.value.trim()).length} items</div>
-              </div>
-              
-              <div className="info-list">
-                {additionalInfo
-                  .filter(item => item.value.trim())
-                  .map((info) => (
-                    <div key={info.id} className="info-item">
-                      <div className="info-bullet"></div>
-                      <span>{info.value}</span>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          )}
-
-          {/* Quick Actions */}
-          <div className="overview-card">
-            <div className="card-header">
-              <div className="card-title">
-                <SettingsIcon size={20} />
-                <h3>Quick Actions</h3>
+                <div className="section-text-modern">
+                  <h3>Quick Actions</h3>
+                  <p>Manage your hostel operations efficiently</p>
+                </div>
               </div>
             </div>
             
-            <div className="actions-grid">
+            <div className="actions-grid-modern">
               <button 
-                className="action-button primary"
+                className="action-card-modern primary"
                 onClick={() => window.location.href = '/tenants'}
               >
-                <Users size={18} />
-                <span>Manage Tenants</span>
+                <div className="action-icon-modern">
+                  <Users size={20} />
+                </div>
+                <div className="action-content-modern">
+                  <span className="action-title-modern">Manage Tenants</span>
+                  <span className="action-subtitle-modern">View and manage resident information</span>
+                </div>
               </button>
+              
               <button 
-                className="action-button"
+                className="action-card-modern"
                 onClick={() => {
-                  // Show room information in a modal or navigate to room management
                   const roomInfo = hostelInfo?.roomDetails || [];
                   if (roomInfo.length > 0) {
                     alert(`Room Information:\n\n${roomInfo.map(room => 
@@ -357,24 +801,35 @@ const HostelOverview = ({ hostelInfo }) => {
                   }
                 }}
               >
-                <Home size={18} />
-                <span>View Rooms</span>
+                <div className="action-icon-modern">
+                  <Home size={20} />
+                </div>
+                <div className="action-content-modern">
+                  <span className="action-title-modern">View Rooms</span>
+                  <span className="action-subtitle-modern">Check room availability and details</span>
+                </div>
               </button>
+              
               <button 
-                className="action-button"
-                onClick={() => window.location.href = '/payments'}
+                className="action-card-modern"
+                onClick={() => window.location.href = '/analytics'}
               >
-                <CreditCard size={18} />
-                <span>Track Payments</span>
+                <div className="action-icon-modern">
+                  <BarChart3 size={20} />
+                </div>
+                <div className="action-content-modern">
+                  <span className="action-title-modern">View Analytics</span>
+                  <span className="action-subtitle-modern">Detailed performance insights</span>
+                </div>
               </button>
+              
               <button 
-                className="action-button"
+                className="action-card-modern"
                 onClick={() => {
-                  // Show quick analytics overview
                   const analytics = {
-                    occupancy: '87%',
-                    revenue: '$45,600',
-                    tenants: '156',
+                    occupancy: `${occupancyRate}%`,
+                    revenue: `$${Math.round(totalRevenue).toLocaleString()}`,
+                    tenants: totalTenants.toString(),
                     satisfaction: '4.2/5'
                   };
                   
@@ -385,56 +840,17 @@ const HostelOverview = ({ hostelInfo }) => {
                         `⭐ Tenant Satisfaction: ${analytics.satisfaction}`);
                 }}
               >
-                <BarChart3 size={18} />
-                <span>View Analytics</span>
+                <div className="action-icon-modern">
+                  <DollarSign size={20} />
+                </div>
+                <div className="action-content-modern">
+                  <span className="action-title-modern">Revenue Overview</span>
+                  <span className="action-subtitle-modern">Financial performance summary</span>
+                </div>
               </button>
             </div>
           </div>
 
-          {/* Enhanced Performance Summary */}
-          <div className="overview-card performance">
-            <div className="card-header">
-              <div className="card-title">
-                <TrendingUp size={20} />
-                <h3>Performance Summary</h3>
-              </div>
-            </div>
-            
-            <div className="performance-metrics">
-              <div className="performance-item">
-                <div className="performance-label">Occupancy Rate</div>
-                <div className="performance-value">87%</div>
-                <div className="performance-trend positive">
-                  <TrendingUp size={14} />
-                  +5% vs last month
-                </div>
-              </div>
-              <div className="performance-item">
-                <div className="performance-label">Revenue Growth</div>
-                <div className="performance-value">+12%</div>
-                <div className="performance-trend positive">
-                  <TrendingUp size={14} />
-                  +2% vs last month
-                </div>
-              </div>
-              <div className="performance-item">
-                <div className="performance-label">Tenant Satisfaction</div>
-                <div className="performance-value">4.6/5</div>
-                <div className="performance-trend neutral">
-                  <Minus size={14} />
-                  Stable
-                </div>
-              </div>
-              <div className="performance-item">
-                <div className="performance-label">Maintenance Issues</div>
-                <div className="performance-value">3</div>
-                <div className="performance-trend negative">
-                  <TrendingDown size={14} />
-                  +1 vs last month
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

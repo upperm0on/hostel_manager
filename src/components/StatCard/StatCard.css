@@ -1,8 +1,8 @@
 /* Stat Card Container */
 .stat-card {
   background-color: var(--surface);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-xl);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
   transition: var(--transition);
@@ -18,13 +18,13 @@
 
 /* Stat Card Icon */
 .stat-card-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-lg);
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-xs);
   position: relative;
   z-index: 1;
 }
@@ -61,18 +61,18 @@
 }
 
 .stat-card-number {
-  font-size: 2rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: 2px;
   line-height: 1.2;
 }
 
 .stat-card-label {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
   font-weight: 500;
-  margin-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
 }
 
 .stat-card-change {
@@ -100,7 +100,7 @@
   height: 16px;
 }
 
-/* Stat Card Background Pattern */
+/* Stat Card Background Pattern - Removed gradients */
 .stat-card::before {
   content: '';
   position: absolute;
@@ -108,26 +108,26 @@
   right: -20px;
   width: 100px;
   height: 100px;
-  background: linear-gradient(135deg, transparent 30%, rgba(37, 99, 235, 0.03) 30%);
+  background: rgba(37, 99, 235, 0.02);
   border-radius: 50%;
   z-index: 0;
 }
 
-/* Stat Card Variants */
+/* Stat Card Variants - Simplified without gradients */
 .stat-card.users::before {
-  background: linear-gradient(135deg, transparent 30%, rgba(37, 99, 235, 0.03) 30%);
+  background: rgba(37, 99, 235, 0.02);
 }
 
 .stat-card.rooms::before {
-  background: linear-gradient(135deg, transparent 30%, rgba(16, 185, 129, 0.03) 30%);
+  background: rgba(16, 185, 129, 0.02);
 }
 
 .stat-card.revenue::before {
-  background: linear-gradient(135deg, transparent 30%, rgba(245, 158, 11, 0.03) 30%);
+  background: rgba(245, 158, 11, 0.02);
 }
 
 .stat-card.alerts::before {
-  background: linear-gradient(135deg, transparent 30%, rgba(239, 68, 68, 0.03) 30%);
+  background: rgba(239, 68, 68, 0.02);
 }
 
 /* Responsive */

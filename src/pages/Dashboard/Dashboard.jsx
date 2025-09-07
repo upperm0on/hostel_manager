@@ -5,11 +5,10 @@ import { Home, Plus } from 'lucide-react';
 import {
   DashboardHeader,
   DashboardGrid,
-  DashboardStats,
   RecentActivities,
   UpcomingEvents,
   MaintenanceAlerts,
-  TopPerformers,
+  RecentTenants,
   DashboardAnalytics,
   DashboardCharts
 } from '../../components/Dashboard';
@@ -19,34 +18,7 @@ const Dashboard = () => {
   const { hasHostel, hostelInfo } = useHostel();
   const navigate = useNavigate();
 
-  // Mock data for demonstration
-  const mockData = {
-    totalTenants: 45,
-    occupancyRate: 87,
-    monthlyRevenue: 12500,
-    pendingPayments: 8,
-    recentActivities: [
-      { id: 1, type: 'checkin', tenant: 'John Doe', time: '2 hours ago', icon: 'user-plus' },
-      { id: 2, type: 'payment', tenant: 'Jane Smith', amount: 500, time: '4 hours ago', icon: 'credit-card' },
-      { id: 3, type: 'maintenance', issue: 'Water heater repair', time: '6 hours ago', icon: 'wrench' },
-      { id: 4, type: 'checkout', tenant: 'Mike Johnson', time: '1 day ago', icon: 'user-minus' }
-    ],
-    upcomingEvents: [
-      { id: 1, title: 'Monthly Rent Due', date: '2024-01-15', type: 'payment' },
-      { id: 2, title: 'Maintenance Inspection', date: '2024-01-18', type: 'maintenance' },
-      { id: 3, title: 'New Tenant Check-in', date: '2024-01-20', type: 'checkin' }
-    ],
-    maintenanceAlerts: [
-      { id: 1, issue: 'Water heater needs repair', priority: 'high', room: 'Room 15' },
-      { id: 2, issue: 'Light bulb replacement', priority: 'medium', room: 'Common Area' },
-      { id: 3, issue: 'Window lock broken', priority: 'low', room: 'Room 8' }
-    ],
-    topPerformers: [
-      { id: 1, name: 'Sarah Wilson', room: 'Room 12', rating: 4.9, payments: 'On time' },
-      { id: 2, name: 'David Brown', room: 'Room 7', rating: 4.8, payments: 'Early' },
-      { id: 3, name: 'Lisa Garcia', room: 'Room 21', rating: 4.7, payments: 'On time' }
-    ]
-  };
+  // No more mock data - using real data from context and API calls
 
   const handleSetupHostel = () => {
     navigate('/settings');
@@ -79,24 +51,21 @@ const Dashboard = () => {
     <div className="dashboard">
       <DashboardHeader hostelInfo={hostelInfo} />
 
-      {/* Dashboard Stats Component */}
-      <DashboardStats stats={mockData} />
-
       {/* Dashboard Analytics Component */}
       <DashboardAnalytics hostelInfo={hostelInfo} />
 
       {/* Dashboard Charts Component */}
-      <DashboardCharts />
+      <DashboardCharts hostelInfo={hostelInfo} />
 
       <DashboardGrid columns={2}>
         <div className="dashboard-left">
-          <RecentActivities activities={mockData.recentActivities} />
-          <UpcomingEvents events={mockData.upcomingEvents} />
+          <RecentActivities />
+          <UpcomingEvents />
         </div>
         
         <div className="dashboard-right">
-          <MaintenanceAlerts alerts={mockData.maintenanceAlerts} />
-          <TopPerformers performers={mockData.topPerformers} />
+          <MaintenanceAlerts />
+          <RecentTenants />
         </div>
       </DashboardGrid>
     </div>

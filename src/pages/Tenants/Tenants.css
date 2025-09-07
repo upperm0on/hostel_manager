@@ -71,8 +71,9 @@
 }
 
 .filter-button:hover {
-  background-color: var(--border);
-  color: var(--text-primary);
+  background-color: var(--primary);
+  color: white;
+  border-color: var(--primary);
 }
 
 /* Tenants Table */
@@ -258,15 +259,18 @@
 }
 
 .action-button:hover {
-  background-color: var(--background);
+  background-color: var(--primary);
+  color: white;
 }
 
 .action-button.view:hover {
-  color: var(--info);
+  background-color: var(--info);
+  color: white;
 }
 
 .action-button.edit:hover {
-  color: var(--primary);
+  background-color: var(--primary);
+  color: white;
 }
 
 /* No Hostel Tenants State */

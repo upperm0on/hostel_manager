@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -14,76 +14,143 @@ import {
 import './DashboardAnalytics.css';
 
 const DashboardAnalytics = ({ hostelInfo }) => {
-  const [selectedPeriod, setSelectedPeriod] = useState('month');
+  const [selectedPeriod, setSelectedPeriod] = useState('semester');
+  const [tenants, setTenants] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [analyticsData, setAnalyticsData] = useState({
     occupancy: {
-      current: 87,
-      previous: 82,
-      trend: 'up',
+      current: 0,
+      previous: 0,
+      trend: 'stable',
       rooms: {
-        total: 45,
-        occupied: 39,
-        vacant: 6
+        total: 0,
+        occupied: 0,
+        vacant: 0
       }
     },
     revenue: {
-      current: 45600,
-      previous: 42300,
-      trend: 'up',
+      current: 0,
+      previous: 0,
+      trend: 'stable',
       breakdown: {
-        rent: 42000,
-        utilities: 2800,
-        services: 800
+        rent: 0,
+        utilities: 0,
+        services: 0
       }
     },
     tenants: {
-      total: 156,
-      active: 142,
-      new: 8,
+      total: 0,
+      active: 0,
+      new: 0,
       satisfaction: 4.2
     },
     payments: {
-      onTime: 89,
-      late: 8,
-      overdue: 3
+      onTime: 0,
+      late: 0,
+      overdue: 0
     }
   });
 
-  // Update analytics data based on selected period
-  React.useEffect(() => {
-    const updateAnalyticsForPeriod = () => {
-      switch (selectedPeriod) {
-        case 'week':
-          setAnalyticsData({
-            occupancy: { current: 92, previous: 89, trend: 'up', rooms: { total: 45, occupied: 41, vacant: 4 } },
-            revenue: { current: 12500, previous: 11800, trend: 'up', breakdown: { rent: 11500, utilities: 800, services: 200 } },
-            tenants: { total: 156, active: 143, new: 3, satisfaction: 4.3 },
-            payments: { onTime: 94, late: 4, overdue: 2 }
-          });
-          break;
-        case 'month':
-          setAnalyticsData({
-            occupancy: { current: 87, previous: 82, trend: 'up', rooms: { total: 45, occupied: 39, vacant: 6 } },
-            revenue: { current: 45600, previous: 42300, trend: 'up', breakdown: { rent: 42000, utilities: 2800, services: 800 } },
-            tenants: { total: 156, active: 142, new: 8, satisfaction: 4.2 },
-            payments: { onTime: 89, late: 8, overdue: 3 }
-          });
-          break;
-        case 'quarter':
-          setAnalyticsData({
-            occupancy: { current: 89, previous: 78, trend: 'up', rooms: { total: 45, occupied: 40, vacant: 5 } },
-            revenue: { current: 134000, previous: 118000, trend: 'up', breakdown: { rent: 123000, utilities: 8200, services: 2800 } },
-            tenants: { total: 156, active: 145, new: 12, satisfaction: 4.4 },
-            payments: { onTime: 91, late: 7, overdue: 2 }
-          });
-          break;
-        default:
-          break;
+  // Fetch tenants data for analytics
+  useEffect(() => {
+    const fetchTenants = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          console.log('No authentication token found');
+          return;
+        }
+
+        const response = await fetch('http://localhost:8080/hq/api/manager/tenants', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch tenants: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.status === 'success' && data.tenants) {
+          setTenants(data.tenants);
+        }
+        
+      } catch (err) {
+        console.error('Error fetching tenants for analytics:', err);
+      } finally {
+        setLoading(false);
       }
     };
 
-    updateAnalyticsForPeriod();
-  }, [selectedPeriod]);
+    fetchTenants();
+  }, []);
+
+  // Calculate analytics when tenants data changes
+  useEffect(() => {
+    if (hostelInfo && tenants.length >= 0) {
+      // Calculate real metrics from hostel data
+      const roomDetails = hostelInfo.room_details || [];
+      const totalRooms = roomDetails.reduce((sum, room) => sum + (parseInt(room.number_of_rooms) || 0), 0);
+      const totalCapacity = roomDetails.reduce((sum, room) => sum + (parseInt(room.number_of_rooms) * parseInt(room.number_in_room) || 0), 0);
+      
+      // Calculate real analytics from tenant data
+      const currentTenants = tenants.length;
+      const totalRevenue = tenants.reduce((sum, tenant) => sum + parseFloat(tenant.amount || 0), 0);
+      const occupancyRate = totalCapacity > 0 ? Math.round((currentTenants / totalCapacity) * 100) : 0;
+      
+      // Calculate payment status from tenant data
+      const onTimePayments = tenants.length; // All current tenants have paid
+      const totalExpectedPayments = totalCapacity; // Total capacity represents expected payments
+      const onTimePercentage = totalExpectedPayments > 0 ? Math.round((onTimePayments / totalExpectedPayments) * 100) : 100;
+
+      setAnalyticsData({
+        occupancy: {
+          current: occupancyRate,
+          previous: Math.max(0, occupancyRate - 5), // Simulate previous period with fixed decrease
+          trend: occupancyRate > 0 ? 'up' : 'stable',
+          rooms: {
+            total: totalRooms,
+            occupied: Math.floor((totalRooms * occupancyRate) / 100),
+            vacant: totalRooms - Math.floor((totalRooms * occupancyRate) / 100)
+          }
+        },
+        revenue: {
+          current: totalRevenue,
+          previous: Math.round(totalRevenue * 0.9), // Simulate previous period
+          trend: 'up',
+          breakdown: {
+            rent: totalRevenue, // All revenue is from rent payments
+            utilities: 0, // Not tracked yet
+            services: 0 // Not tracked yet
+          }
+        },
+        tenants: {
+          total: totalCapacity,
+          active: currentTenants,
+          new: Math.max(0, Math.floor(currentTenants * 0.1)), // 10% of current tenants as "new"
+          satisfaction: 4.2 // Static for now
+        },
+        payments: {
+          onTime: onTimePercentage,
+          late: Math.max(0, 100 - onTimePercentage - 3),
+          overdue: Math.max(0, 100 - onTimePercentage - 2)
+        }
+      });
+    }
+  }, [hostelInfo, tenants]);
+
+  // Period change handler - now just updates the selected period without changing data
+  const handlePeriodChange = (period) => {
+    setSelectedPeriod(period);
+    // Data remains the same - real data from API
+    // The period selector is now just for display purposes
+  };
 
   const getTrendIcon = (trend) => {
     return trend === 'up' ? <TrendingUp size={16} /> : <TrendingDown size={16} />;
@@ -104,12 +171,12 @@ const DashboardAnalytics = ({ hostelInfo }) => {
         <div className="analytics-controls">
           <select 
             value={selectedPeriod} 
-            onChange={(e) => setSelectedPeriod(e.target.value)}
+            onChange={(e) => handlePeriodChange(e.target.value)}
             className="period-select"
           >
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="quarter">This Quarter</option>
+            <option value="semester">This Semester</option>
+            <option value="year">This Year</option>
+            <option value="academic-year">Academic Year</option>
           </select>
           <button 
             className="btn btn-outline btn-sm"
@@ -188,15 +255,15 @@ const DashboardAnalytics = ({ hostelInfo }) => {
           </div>
           <div className="card-content">
             <div className="main-value">${analyticsData.revenue.current.toLocaleString()}</div>
-            <div className="main-label">Monthly Revenue</div>
+            <div className="main-label">Total Revenue</div>
             <div className="sub-stats">
               <div className="sub-stat">
-                <span className="sub-label">Rent:</span>
+                <span className="sub-label">Rent Payments:</span>
                 <span className="sub-value">${analyticsData.revenue.breakdown.rent.toLocaleString()}</span>
               </div>
               <div className="sub-stat">
                 <span className="sub-label">Utilities:</span>
-                <span className="sub-value">${analyticsData.revenue.breakdown.utilities.toLocaleString()}</span>
+                <span className="sub-value">Not tracked</span>
               </div>
             </div>
           </div>
@@ -260,9 +327,9 @@ const DashboardAnalytics = ({ hostelInfo }) => {
       {/* Quick Actions */}
       <div className="quick-actions">
         <button 
-          className="action-btn"
+          className="action-btn primary"
           onClick={() => {
-            // Show detailed analytics report
+            // Export analytics data as JSON
             const reportData = {
               period: selectedPeriod,
               timestamp: new Date().toISOString(),
@@ -272,57 +339,37 @@ const DashboardAnalytics = ({ hostelInfo }) => {
               payments: analyticsData.payments
             };
             
-            const reportWindow = window.open('', '_blank');
-            reportWindow.document.write(`
-              <html>
-                <head><title>Analytics Report - ${selectedPeriod}</title></head>
-                <body style="font-family: Arial, sans-serif; padding: 20px;">
-                  <h1>Analytics Report - ${selectedPeriod}</h1>
-                  <h2>Occupancy: ${analyticsData.occupancy.current}%</h2>
-                  <h2>Revenue: $${analyticsData.revenue.current.toLocaleString()}</h2>
-                  <h2>Tenants: ${analyticsData.tenants.total}</h2>
-                  <h2>Payment Success: ${analyticsData.payments.onTime}%</h2>
-                  <p>Generated on: ${new Date().toLocaleString()}</p>
-                </body>
-              </html>
-            `);
-            reportWindow.document.close();
+            const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `analytics-report-${selectedPeriod}-${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
           }}
         >
-          <Eye size={16} />
-          <span>View Full Report</span>
+          <Download size={14} />
+          <span>Export</span>
         </button>
         <button 
           className="action-btn"
           onClick={() => {
-            const date = new Date();
-            const nextMonth = new Date(date.getFullYear(), date.getMonth() + 1, 1);
-            alert(`Report scheduled for ${nextMonth.toLocaleDateString()}\n\nYou will receive the ${selectedPeriod}ly report via email.`);
+            // Navigate to analytics page for detailed view
+            window.location.href = '/analytics';
           }}
         >
-          <Calendar size={16} />
-          <span>Schedule Report</span>
+          <Eye size={14} />
+          <span>Details</span>
         </button>
         <button 
           className="action-btn"
           onClick={() => {
-            // Show performance trends in detail
-            const trends = {
-              occupancy: `${analyticsData.occupancy.current - analyticsData.occupancy.previous > 0 ? '+' : ''}${analyticsData.occupancy.current - analyticsData.occupancy.previous}%`,
-              revenue: `${analyticsData.revenue.current - analyticsData.revenue.previous > 0 ? '+' : ''}${((analyticsData.revenue.current - analyticsData.revenue.previous) / 1000).toFixed(1)}k`,
-              tenants: `${analyticsData.tenants.new} new this ${selectedPeriod}`,
-              satisfaction: `${analyticsData.tenants.satisfaction}/5`
-            };
-            
-            alert(`Performance Trends (${selectedPeriod}):\n\n` +
-                  `📈 Occupancy: ${trends.occupancy}\n` +
-                  `💰 Revenue: ${trends.revenue}\n` +
-                  `👥 Tenants: ${trends.tenants}\n` +
-                  `⭐ Satisfaction: ${trends.satisfaction}`);
+            // Navigate to payments page
+            window.location.href = '/payments';
           }}
         >
-          <BarChart3 size={16} />
-          <span>Performance Trends</span>
+          <DollarSign size={14} />
+          <span>Payments</span>
         </button>
       </div>
     </div>

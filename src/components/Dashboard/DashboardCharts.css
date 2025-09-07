@@ -243,3 +243,23 @@
     font-size: 0.7rem;
   }
 }
+
+/* Chart Container Styles */
+.chart-container {
+  height: 300px;
+  width: 100%;
+  position: relative;
+}
+
+/* Loading Spinner */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+.loading-spinner {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}

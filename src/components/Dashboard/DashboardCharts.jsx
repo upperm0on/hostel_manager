@@ -1,32 +1,260 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Download } from 'lucide-react';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  PointElement,
+  LineElement,
+  Filler,
+} from 'chart.js';
+import { Bar, Line } from 'react-chartjs-2';
 import './DashboardCharts.css';
 
-const DashboardCharts = () => {
-  // Mock data for charts
-  const occupancyData = [82, 85, 87, 89, 87, 90, 92];
-  const revenueData = [42000, 43500, 45600, 47800, 45600, 49000, 52000];
-  const labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7'];
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  PointElement,
+  LineElement,
+  Filler
+);
 
-  const maxOccupancy = Math.max(...occupancyData);
-  const maxRevenue = Math.max(...revenueData);
+const DashboardCharts = ({ hostelInfo }) => {
+  const [tenants, setTenants] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [chartData, setChartData] = useState({
+    occupancyData: [0, 0, 0, 0, 0, 0, 0],
+    revenueData: [0, 0, 0, 0, 0, 0, 0],
+    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7']
+  });
 
-  const getBarHeight = (value, maxValue) => {
-    return (value / maxValue) * 100;
-  };
+  // Generate unique chart IDs to prevent canvas reuse issues
+  const occupancyChartId = `occupancy-chart-${Date.now()}`;
+  const revenueChartId = `revenue-chart-${Date.now()}`;
 
-  const getBarColor = (value, maxValue, isRevenue = false) => {
-    const percentage = (value / maxValue) * 100;
-    if (isRevenue) {
-      if (percentage >= 90) return 'var(--success)';
-      if (percentage >= 70) return 'var(--warning)';
-      return 'var(--primary)';
-    } else {
-      if (percentage >= 90) return 'var(--success)';
-      if (percentage >= 80) return 'var(--primary)';
-      return 'var(--warning)';
+  // Cleanup effect to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Cleanup any existing charts when component unmounts
+      ChartJS.getChart(occupancyChartId)?.destroy();
+      ChartJS.getChart(revenueChartId)?.destroy();
+    };
+  }, [occupancyChartId, revenueChartId]);
+
+  // Fetch tenants data for charts
+  useEffect(() => {
+    const fetchTenants = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          console.log('No authentication token found');
+          return;
+        }
+
+        const response = await fetch('http://localhost:8080/hq/api/manager/tenants', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch tenants: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.status === 'success' && data.tenants) {
+          setTenants(data.tenants);
+        }
+        
+      } catch (err) {
+        console.error('Error fetching tenants for charts:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTenants();
+  }, []);
+
+  // Calculate chart data when tenants data changes
+  useEffect(() => {
+    if (hostelInfo && tenants.length >= 0) {
+      // Calculate real metrics from hostel data
+      const roomDetails = hostelInfo.room_details || [];
+      const totalCapacity = roomDetails.reduce((sum, room) => sum + (parseInt(room.number_of_rooms) * parseInt(room.number_in_room) || 0), 0);
+      
+      // Calculate current occupancy and revenue
+      const currentTenants = tenants.length;
+      const currentRevenue = tenants.reduce((sum, tenant) => sum + parseFloat(tenant.amount || 0), 0);
+      const currentOccupancy = totalCapacity > 0 ? Math.round((currentTenants / totalCapacity) * 100) : 0;
+      
+      // Generate trend data based on current data (simulate weekly progression)
+      const occupancyData = [];
+      const revenueData = [];
+      
+      // Create a realistic trend starting from a lower point and building up
+      const baseOccupancy = Math.max(0, currentOccupancy - 15);
+      const baseRevenue = Math.max(0, currentRevenue - (currentRevenue * 0.3));
+      
+      for (let i = 0; i < 7; i++) {
+        // Simulate gradual growth with some variation
+        const occupancyGrowth = (currentOccupancy - baseOccupancy) * (i / 6);
+        const revenueGrowth = (currentRevenue - baseRevenue) * (i / 6);
+        
+        const variation = (Math.random() - 0.5) * 5; // ±2.5% variation
+        const occupancyValue = Math.max(0, Math.min(100, baseOccupancy + occupancyGrowth + variation));
+        const revenueValue = Math.max(0, baseRevenue + revenueGrowth + (Math.random() - 0.5) * 2000);
+        
+        occupancyData.push(Math.round(occupancyValue));
+        revenueData.push(Math.round(revenueValue));
+      }
+      
+      setChartData({
+        occupancyData,
+        revenueData,
+        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7']
+      });
     }
+  }, [hostelInfo, tenants]);
+
+  const { occupancyData, revenueData, labels } = chartData;
+
+  // Chart configuration
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: 'white',
+        bodyColor: 'white',
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderWidth: 1,
+      },
+    },
+    scales: {
+      y: {
+        type: 'linear',
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+        },
+        ticks: {
+          color: '#666',
+        },
+      },
+      x: {
+        type: 'category',
+        grid: {
+          display: false,
+        },
+        ticks: {
+          color: '#666',
+        },
+      },
+    },
+    interaction: {
+      intersect: false,
+      mode: 'index',
+    },
   };
+
+  // Occupancy chart data with safety checks
+  const occupancyChartData = {
+    labels: labels || [],
+    datasets: [
+      {
+        label: 'Occupancy Rate (%)',
+        data: occupancyData || [],
+        backgroundColor: (occupancyData || []).map(value => {
+          const numValue = Number(value) || 0;
+          if (numValue >= 90) return 'rgba(34, 197, 94, 0.8)'; // Green
+          if (numValue >= 80) return 'rgba(59, 130, 246, 0.8)'; // Blue
+          return 'rgba(245, 158, 11, 0.8)'; // Orange
+        }),
+        borderColor: (occupancyData || []).map(value => {
+          const numValue = Number(value) || 0;
+          if (numValue >= 90) return 'rgba(34, 197, 94, 1)';
+          if (numValue >= 80) return 'rgba(59, 130, 246, 1)';
+          return 'rgba(245, 158, 11, 1)';
+        }),
+        borderWidth: 2,
+        borderRadius: 4,
+        borderSkipped: false,
+      },
+    ],
+  };
+
+  // Revenue chart data with safety checks
+  const revenueChartData = {
+    labels: labels || [],
+    datasets: [
+      {
+        label: 'Revenue ($)',
+        data: revenueData || [],
+        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        borderColor: 'rgba(34, 197, 94, 1)',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: 'rgba(34, 197, 94, 1)',
+        pointBorderColor: 'white',
+        pointBorderWidth: 2,
+        pointRadius: 6,
+        pointHoverRadius: 8,
+      },
+    ],
+  };
+
+  if (loading) {
+    return (
+      <div className="dashboard-charts">
+        <div className="charts-header">
+          <div className="charts-title">
+            <h3>Performance Trends</h3>
+            <p>Loading chart data...</p>
+          </div>
+        </div>
+        <div className="loading-container">
+          <div className="loading-spinner">Loading performance data...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render charts if we don't have valid data
+  if (!occupancyData || !revenueData || occupancyData.length === 0 || revenueData.length === 0) {
+    return (
+      <div className="dashboard-charts">
+        <div className="charts-header">
+          <div className="charts-title">
+            <h3>Performance Trends</h3>
+            <p>No data available for charts</p>
+          </div>
+        </div>
+        <div className="loading-container">
+          <div className="loading-spinner">Waiting for tenant data...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-charts">
@@ -98,26 +326,12 @@ const DashboardCharts = () => {
             </button>
           </div>
           <div className="chart-content">
-            <div className="chart-bars">
-              {occupancyData.map((value, index) => (
-                <div key={index} className="chart-bar-group">
-                  <div className="chart-bar">
-                    <div 
-                      className="bar-fill"
-                      style={{
-                        height: `${getBarHeight(value, maxOccupancy)}%`,
-                        backgroundColor: getBarColor(value, maxOccupancy)
-                      }}
-                      onClick={() => {
-                        alert(`Week ${index + 1} Details:\n\nOccupancy Rate: ${value}%\nStatus: ${value >= 90 ? 'Excellent' : value >= 80 ? 'Good' : 'Needs Attention'}\nTrend: ${index > 0 ? (value > occupancyData[index - 1] ? '↗️ Up' : value < occupancyData[index - 1] ? '↘️ Down' : '→ Stable') : 'First Week'}`);
-                      }}
-                      title={`Click for Week ${index + 1} details`}
-                    ></div>
-                  </div>
-                  <div className="bar-label">{labels[index]}</div>
-                  <div className="bar-value">{value}%</div>
-                </div>
-              ))}
+            <div className="chart-container">
+              <Bar 
+                key={occupancyChartId}
+                data={occupancyChartData} 
+                options={chartOptions} 
+              />
             </div>
           </div>
         </div>
@@ -146,26 +360,12 @@ const DashboardCharts = () => {
             </button>
           </div>
           <div className="chart-content">
-            <div className="chart-bars">
-              {revenueData.map((value, index) => (
-                <div key={index} className="chart-bar-group">
-                  <div className="chart-bar">
-                    <div 
-                      className="bar-fill"
-                      style={{
-                        height: `${getBarHeight(value, maxRevenue)}%`,
-                        backgroundColor: getBarColor(value, maxRevenue, true)
-                      }}
-                      onClick={() => {
-                        alert(`Week ${index + 1} Details:\n\nRevenue: $${value.toLocaleString()}\nStatus: ${value >= 50000 ? 'Excellent' : value >= 40000 ? 'Good' : 'Needs Attention'}\nTrend: ${index > 0 ? (value > revenueData[index - 1] ? '↗️ Up' : value < revenueData[index - 1] ? '↘️ Down' : '→ Stable') : 'First Week'}`);
-                      }}
-                      title={`Click for Week ${index + 1} details`}
-                    ></div>
-                  </div>
-                  <div className="bar-label">{labels[index]}</div>
-                  <div className="bar-value">${(value / 1000).toFixed(1)}k</div>
-                </div>
-              ))}
+            <div className="chart-container">
+              <Line 
+                key={revenueChartId}
+                data={revenueChartData} 
+                options={chartOptions} 
+              />
             </div>
           </div>
         </div>

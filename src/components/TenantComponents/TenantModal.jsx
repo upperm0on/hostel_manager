@@ -241,10 +241,11 @@ const TenantModal = ({
                     className={`form-input ${errors.room ? 'error' : ''}`}
                     value={formData.room}
                     onChange={(e) => handleInputChange('room', e.target.value)}
-                    placeholder="Enter room number/name"
+                    placeholder="e.g., 3 in room"
                     disabled={isSubmitting}
                   />
                   {errors.room && <span className="error-message">{errors.room}</span>}
+                  <small className="form-help">Enter the position in room (e.g., "3 in room" means 3rd person in the room)</small>
                 </div>
               </div>
             </div>

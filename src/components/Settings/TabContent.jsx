@@ -1,5 +1,5 @@
 import React from 'react';
-import { HostelOverview, AnalyticsTab, BankingDetailsTab } from '../SettingsTabs';
+import { HostelOverview, BankingDetailsTab } from '../SettingsTabs';
 import './TabContent.css';
 
 const TabContent = ({ activeTab, hostelInfo, bankingDetails, onBankingSave }) => {
@@ -9,13 +9,6 @@ const TabContent = ({ activeTab, hostelInfo, bankingDetails, onBankingSave }) =>
         return (
           <div className="tab-panel">
             <HostelOverview hostelInfo={hostelInfo} />
-          </div>
-        );
-      
-      case 'analytics':
-        return (
-          <div className="tab-panel">
-            <AnalyticsTab hostelInfo={hostelInfo} />
           </div>
         );
       

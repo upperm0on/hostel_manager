@@ -29,7 +29,7 @@ function LoginForms() {
       const res = await fetch("http://localhost:8080/hq/api/login/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, is_manager: true }),
       });
 
       if (!res.ok) {
@@ -46,12 +46,12 @@ function LoginForms() {
 
       const data = await res.json();
 
-      if (data.token) {
-        login(data.token, username);
+      if (data.token && data.status === "success") {
+        login(data);
         const from = location.state?.from?.pathname || "/";
         navigate(from, { replace: true });
       } else {
-        setError("Invalid login. Please try again.");
+        setError("Invalid login response. Please try again.");
       }
     } catch (err) {
       setError(err.message || "Login failed. Please try again.");

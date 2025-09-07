@@ -18,26 +18,59 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Check if user is already logged in
     const token = localStorage.getItem('token');
-    const username = localStorage.getItem('name');
+    const userData = localStorage.getItem('userData');
     
-    if (token && username) {
-      setIsAuthenticated(true);
-      setUser({ username, token });
+    if (token && userData) {
+      try {
+        const parsedUserData = JSON.parse(userData);
+        setIsAuthenticated(true);
+        setUser(parsedUserData);
+      } catch (e) {
+        console.error('Error parsing stored user data:', e);
+        // Clear corrupted data
+        localStorage.removeItem('token');
+        localStorage.removeItem('userData');
+        localStorage.removeItem('hostelInfo');
+      }
     }
     
     setLoading(false);
   }, []);
 
-  const login = (token, username) => {
-    localStorage.setItem('token', token);
-    localStorage.setItem('name', username);
+  const login = (loginResponse) => {
+    // Save token
+    localStorage.setItem('token', loginResponse.token);
+    
+    // Save user data
+    const userData = {
+      username: loginResponse.username,
+      is_manager: loginResponse.is_manager,
+      token: loginResponse.token
+    };
+    localStorage.setItem('userData', JSON.stringify(userData));
+    
+    // Save hostel data (only in hostelInfo - single source of truth)
+    if (loginResponse.hostel) {
+      // Parse additional_details and room_details if they're strings
+      const processedHostelData = { ...loginResponse.hostel };
+      if (processedHostelData.additional_details && typeof processedHostelData.additional_details === 'string') {
+        processedHostelData.additional_details = JSON.parse(processedHostelData.additional_details);
+      }
+      if (processedHostelData.room_details && typeof processedHostelData.room_details === 'string') {
+        processedHostelData.room_details = JSON.parse(processedHostelData.room_details);
+      }
+      
+      localStorage.setItem('hostelInfo', JSON.stringify(processedHostelData));
+    }
+    
     setIsAuthenticated(true);
-    setUser({ username, token });
+    setUser(userData);
   };
 
   const logout = () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('name');
+    localStorage.removeItem('userData');
+    localStorage.removeItem('hostelInfo');
     setIsAuthenticated(false);
     setUser(null);
   };

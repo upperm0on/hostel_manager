@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Eye, Edit, Users, Trash2 } from 'lucide-react';
-import { ConfirmationModal } from '../Common';
+import { Users } from 'lucide-react';
 import './TenantComponents.css';
 
-const TenantTable = ({ tenants, onView, onEdit, onDelete }) => {
-  const [deleteModal, setDeleteModal] = useState({ isOpen: false, tenant: null });
+const TenantTable = ({ tenants }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const getStatusClass = (status) => {
@@ -34,20 +31,6 @@ const TenantTable = ({ tenants, onView, onEdit, onDelete }) => {
     }
   };
 
-  const handleDeleteClick = (tenant) => {
-    setDeleteModal({ isOpen: true, tenant });
-  };
-
-  const handleDeleteConfirm = () => {
-    if (deleteModal.tenant && onDelete) {
-      onDelete(deleteModal.tenant);
-    }
-    setDeleteModal({ isOpen: false, tenant: null });
-  };
-
-  const handleDeleteCancel = () => {
-    setDeleteModal({ isOpen: false, tenant: null });
-  };
 
   // Pagination logic
   const totalPages = Math.ceil(tenants.length / itemsPerPage);
@@ -103,8 +86,6 @@ const TenantTable = ({ tenants, onView, onEdit, onDelete }) => {
             <th>Check-in Date</th>
             <th>Status</th>
             <th>Rent Amount</th>
-            <th>Next Payment</th>
-            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -136,32 +117,6 @@ const TenantTable = ({ tenants, onView, onEdit, onDelete }) => {
                 </div>
               </td>
               <td className="tenant-rent">${tenant.rentAmount}</td>
-              <td className="tenant-payment">{tenant.nextPayment}</td>
-              <td>
-                <div className="tenant-actions">
-                  <Link
-                    to={`/tenants/${tenant.id}`}
-                    className="tenant-action-button view"
-                    title="View tenant"
-                  >
-                    <Eye className="tenant-action-icon" />
-                  </Link>
-                  <button
-                    className="tenant-action-button edit"
-                    onClick={() => onEdit?.(tenant)}
-                    title="Edit tenant"
-                  >
-                    <Edit className="tenant-action-icon" />
-                  </button>
-                  <button
-                    className="tenant-action-button delete"
-                    onClick={() => handleDeleteClick(tenant)}
-                    title="Delete tenant"
-                  >
-                    <Trash2 className="tenant-action-icon" />
-                  </button>
-                </div>
-              </td>
             </tr>
           ))}
         </tbody>
@@ -203,17 +158,6 @@ const TenantTable = ({ tenants, onView, onEdit, onDelete }) => {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={deleteModal.isOpen}
-        onClose={handleDeleteCancel}
-        onConfirm={handleDeleteConfirm}
-        title="Delete Tenant"
-        message={`Are you sure you want to delete ${deleteModal.tenant?.name}? This action cannot be undone.`}
-        confirmText="Delete Tenant"
-        cancelText="Cancel"
-        type="danger"
-      />
     </div>
   );
 };

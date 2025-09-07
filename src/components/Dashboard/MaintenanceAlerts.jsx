@@ -1,8 +1,30 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AlertTriangle, ArrowRight } from 'lucide-react';
 import './DashboardComponents.css';
 
-const MaintenanceAlerts = ({ alerts }) => {
+const MaintenanceAlerts = () => {
+  const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Generate maintenance alerts based on hostel data
+  useEffect(() => {
+    const generateMaintenanceAlerts = () => {
+      // For now, show a simple message that maintenance alerts will be available
+      // when the maintenance system is implemented
+      const maintenanceAlerts = [
+        {
+          id: 1,
+          issue: 'Maintenance system coming soon',
+          room: 'System',
+          priority: 'low'
+        }
+      ];
+
+      setAlerts(maintenanceAlerts);
+    };
+
+    generateMaintenanceAlerts();
+  }, []);
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'high':

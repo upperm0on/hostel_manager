@@ -10,7 +10,6 @@ import {
   NavigationButtons,
   AmenityModal,
   HostelOverview,
-  AnalyticsTab,
   BankingDetailsTab,
 } from "../../components/SettingsTabs";
 import {
@@ -22,17 +21,36 @@ import {
 import "./Settings.css";
 
 const Settings = () => {
-  const { hasHostel, hostelInfo, createHostel, updateHostel, deleteHostel } =
+  const { hasHostel, hostelInfo, createHostel, updateHostel, deleteHostel, refreshHostelData } =
     useHostel();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showAddHostel, setShowAddHostel] = useState(false);
   const [activeTab, setActiveTab] = useState('hostel');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Handle refresh with loading state
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      const result = await refreshHostelData();
+      if (result.success) {
+        console.log('Manual refresh successful');
+      } else {
+        console.error('Manual refresh failed:', result.error);
+        alert('Failed to refresh data. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error during manual refresh:', error);
+      alert('Error refreshing data. Please try again.');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Form data state
   const [hostelDetails, setHostelDetails] = useState({
     name: "",
     location: "",
-    description: "",
     logo: null,
   });
 
@@ -50,14 +68,78 @@ const Settings = () => {
   useEffect(() => {
     if (hostelInfo) {
       setHostelDetails({
-        name: hostelInfo.hostelDetails?.name || "",
-        location: hostelInfo.hostelDetails?.location || "",
-        description: hostelInfo.hostelDetails?.description || "",
-        logo: hostelInfo.hostelDetails?.logo || null,
+        name: hostelInfo.name || "",
+        location: hostelInfo.campus?.campus || "",
+        logo: hostelInfo.image || null,
       });
-      setGeneralAmenities(hostelInfo.generalAmenities || []);
-      setRoomDetails(hostelInfo.roomDetails || []);
-      setAdditionalInfo(hostelInfo.additionalInfo || []);
+      
+      // Parse room details from the backend structure
+      if (hostelInfo.room_details && Array.isArray(hostelInfo.room_details)) {
+        const parsedRoomDetails = hostelInfo.room_details.map((room, index) => {
+          // Parse amenities if it's a string
+          let parsedAmenities = [];
+          if (room.amenities) {
+            if (typeof room.amenities === 'string') {
+              try {
+                const rawAmenities = JSON.parse(room.amenities);
+                // Ensure amenities have proper structure
+                parsedAmenities = rawAmenities.map((amenity, amenityIndex) => ({
+                  id: amenity.id || `amenity-${index}-${amenityIndex}`,
+                  value: amenity.value || amenity || ''
+                }));
+              } catch (e) {
+                console.error('Error parsing amenities:', e);
+                parsedAmenities = [];
+              }
+            } else if (Array.isArray(room.amenities)) {
+              // Ensure amenities have proper structure
+              parsedAmenities = room.amenities.map((amenity, amenityIndex) => ({
+                id: amenity.id || `amenity-${index}-${amenityIndex}`,
+                value: amenity.value || amenity || ''
+              }));
+            }
+          }
+          
+          return {
+            id: index + 1,
+            numberInRoom: room.number_in_room || "",
+            quantity: room.number_of_rooms || "",
+            price: room.price || "",
+            gender: room.gender?.male ? "male" : room.gender?.female ? "female" : "mixed",
+            maleRooms: room.gender?.male || "",
+            femaleRooms: room.gender?.female || "",
+            roomImage: room.room_image || null,
+            amenities: parsedAmenities,
+          };
+        });
+        setRoomDetails(parsedRoomDetails);
+      }
+      
+      // Parse general amenities from additional_details if it exists
+      let parsedGeneralAmenities = [];
+      if (hostelInfo.additional_details) {
+        if (typeof hostelInfo.additional_details === 'string') {
+          try {
+            const parsed = JSON.parse(hostelInfo.additional_details);
+            if (Array.isArray(parsed)) {
+              parsedGeneralAmenities = parsed.map((item, index) => ({
+                id: index + 1,
+                value: typeof item === 'string' ? item : item.value || item
+              }));
+            }
+          } catch (e) {
+            console.error('Error parsing additional_details:', e);
+            parsedGeneralAmenities = [];
+          }
+        } else if (Array.isArray(hostelInfo.additional_details)) {
+          parsedGeneralAmenities = hostelInfo.additional_details.map((item, index) => ({
+            id: index + 1,
+            value: typeof item === 'string' ? item : item.value || item
+          }));
+        }
+      }
+      setGeneralAmenities(parsedGeneralAmenities);
+      setAdditionalInfo([]);
     }
   }, [hostelInfo]);
 
@@ -127,7 +209,13 @@ const Settings = () => {
 
   const openAmenityModal = (roomIndex) => {
     setCurrentRoomIndex(roomIndex);
-    setCurrentRoomAmenities(roomDetails[roomIndex]?.amenities || []);
+    const amenities = roomDetails[roomIndex]?.amenities || [];
+    // Ensure all amenities have proper structure
+    const validAmenities = amenities.map((amenity, index) => ({
+      id: amenity.id || `amenity-${index}`,
+      value: amenity.value || ''
+    }));
+    setCurrentRoomAmenities(validAmenities);
     setShowAmenityModal(true);
   };
 
@@ -153,7 +241,7 @@ const Settings = () => {
             ? {
                 ...room,
                 amenities: currentRoomAmenities.filter((item) =>
-                  item.value.trim()
+                  item.value && item.value.trim()
                 ),
               }
             : room
@@ -165,7 +253,7 @@ const Settings = () => {
   };
 
   const nextSlide = () => {
-    if (currentSlide < 4) {
+    if (currentSlide < 3) {
       setCurrentSlide(currentSlide + 1);
     }
   };
@@ -176,7 +264,7 @@ const Settings = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Validate form data
@@ -188,34 +276,66 @@ const Settings = () => {
     // Prepare data for submission
     const formData = {
       hostelDetails,
-      generalAmenities: generalAmenities.filter((item) => item.value.trim()),
+      generalAmenities: generalAmenities.filter((item) => item.value && item.value.trim()),
       roomDetails: roomDetails.filter(
         (room) => room.numberInRoom || room.price || room.quantity
       ),
-      additionalInfo: additionalInfo.filter((item) => item.value.trim()),
+      additionalInfo: additionalInfo.filter((item) => item.value && item.value.trim()),
     };
 
     console.log("Submitting hostel data:", formData);
 
-    // Create or update hostel using context
-    if (hasHostel) {
-      updateHostel(formData);
-      alert("Hostel information updated successfully!");
-    } else {
-      createHostel(formData);
-      alert("Hostel created successfully!");
-    }
+    try {
+      // Create or update hostel using context
+      let result;
+      if (hasHostel) {
+        result = await updateHostel(formData);
+        if (result.success) {
+          alert("Hostel information updated successfully!");
+          // Refresh data from backend to ensure UI shows latest data
+          console.log("Refreshing data after update...");
+          const refreshResult = await refreshHostelData();
+          if (refreshResult.success) {
+            console.log("Data refreshed successfully after update");
+          } else {
+            console.error("Failed to refresh data after update:", refreshResult.error);
+          }
+        } else {
+          alert(`Error updating hostel: ${result.error?.message || result.error}`);
+          return;
+        }
+      } else {
+        result = await createHostel(formData);
+        if (result.success) {
+          alert("Hostel created successfully!");
+          // Refresh data from backend to ensure UI shows latest data
+          console.log("Refreshing data after creation...");
+          const refreshResult = await refreshHostelData();
+          if (refreshResult.success) {
+            console.log("Data refreshed successfully after creation");
+          } else {
+            console.error("Failed to refresh data after creation:", refreshResult.error);
+          }
+        } else {
+          alert(`Error creating hostel: ${result.error?.message || result.error}`);
+          return;
+        }
+      }
 
-    // Reset form and show success state
-    setShowAddHostel(false);
-    setCurrentSlide(0);
+      // Reset form and show success state
+      setShowAddHostel(false);
+      setCurrentSlide(0);
+    } catch (error) {
+      console.error('Error submitting hostel data:', error);
+      alert(`Error submitting hostel data: ${error.message}`);
+    }
   };
 
   const startAddHostel = () => {
     setShowAddHostel(true);
     setCurrentSlide(0);
     // Reset form data
-    setHostelDetails({ name: "", location: "", description: "", logo: null });
+    setHostelDetails({ name: "", location: "", logo: null });
     setGeneralAmenities([]);
     setRoomDetails([]);
     setAdditionalInfo([]);
@@ -246,12 +366,14 @@ const Settings = () => {
   // If no hostel info exists, show add hostel option
   if (!hasHostel && !showAddHostel) {
     return (
-      <div className="hostel-settings">
-        <SettingsHeader
-          title="Settings"
-          subtitle="Configure your hostel settings and preferences"
-        />
-        <NoHostelState onAddHostel={startAddHostel} />
+      <div className="hostel-settings-modern">
+        <div className="settings-container-modern">
+          <SettingsHeader
+            title="Settings"
+            subtitle="Configure your hostel settings and preferences"
+          />
+          <NoHostelState onAddHostel={startAddHostel} />
+        </div>
       </div>
     );
   }
@@ -259,130 +381,140 @@ const Settings = () => {
   // If showing add hostel form
   if (showAddHostel) {
     return (
-      <div className="hostel-settings">
-        <SettingsHeader
-          title={hasHostel ? "Edit Hostel Information" : "Add New Hostel"}
-          subtitle={
-            hasHostel
-              ? "Update your hostel information below"
-              : "Complete the form below to set up your hostel"
-          }
-          showActions={true}
-          onEdit={() => setShowAddHostel(false)}
-          onDelete={() => setShowAddHostel(false)}
-        />
+      <div className="hostel-settings-modern">
+        <div className="settings-container-modern">
+          <SettingsHeader
+            title={hasHostel ? "Edit Hostel Information" : "Add New Hostel"}
+            subtitle={
+              hasHostel
+                ? "Update your hostel information below"
+                : "Complete the form below to set up your hostel"
+            }
+            showActions={true}
+            onEdit={() => setShowAddHostel(false)}
+            onDelete={() => setShowAddHostel(false)}
+          />
 
-        {/* Progress Indicator Component */}
-        <ProgressIndicator currentSlide={currentSlide} />
-
-        {/* Multi-step Form */}
-        <form onSubmit={handleSubmit} className="multi-step-form">
-          <div className="slideshow-container">
-            <div className="slides-wrapper">
-              {/* Slide 1: Hostel Details Component */}
-              {currentSlide === 0 && (
-                <HostelDetailsTab
-                  hostelDetails={hostelDetails}
-                  onHostelDetailsChange={handleHostelDetailsChange}
-                  onLogoUpload={handleLogoUpload}
-                />
-              )}
-
-              {/* Slide 2: General Amenities Component */}
-              {currentSlide === 1 && (
-                <GeneralAmenitiesTab
-                  generalAmenities={generalAmenities}
-                  additionalInfo={additionalInfo}
-                  onAddGeneralAmenity={addGeneralAmenity}
-                  onRemoveGeneralAmenity={removeGeneralAmenity}
-                  onUpdateGeneralAmenity={updateGeneralAmenity}
-                  onAddAdditionalInfo={addAdditionalInfo}
-                  onRemoveAdditionalInfo={removeAdditionalInfo}
-                  onUpdateAdditionalInfo={updateAdditionalInfo}
-                />
-              )}
-
-              {/* Slide 3: Room Details Component */}
-              {currentSlide === 2 && (
-                <RoomDetailsTab
-                  roomDetails={roomDetails}
-                  onAddRoom={addRoom}
-                  onRemoveRoom={removeRoom}
-                  onUpdateRoom={updateRoom}
-                  onOpenAmenityModal={openAmenityModal}
-                />
-              )}
-
-              {/* Slide 4: Submission Component */}
-              {currentSlide === 3 && (
-                <SubmissionTab
-                  hostelDetails={hostelDetails}
-                  generalAmenities={generalAmenities}
-                  roomDetails={roomDetails}
-                  additionalInfo={additionalInfo}
-                />
-              )}
-
-              {/* Slide 5: Analytics Component */}
-              {currentSlide === 4 && (
-                <AnalyticsTab
-                  hostelInfo={{
-                    hostelDetails,
-                    generalAmenities,
-                    roomDetails,
-                    additionalInfo
-                  }}
-                />
-              )}
-            </div>
+          {/* Progress Indicator Component */}
+          <div className="progress-section-modern">
+            <ProgressIndicator currentSlide={currentSlide} />
           </div>
 
-          {/* Navigation Buttons Component */}
-          <NavigationButtons
-            currentSlide={currentSlide}
-            onPrevSlide={prevSlide}
-            onNextSlide={nextSlide}
-            onSubmit={handleSubmit}
-            hasHostel={hasHostel}
-          />
-        </form>
+          {/* Multi-step Form */}
+          <form onSubmit={handleSubmit} className="multi-step-form-modern">
+            <div className="form-container-modern">
+              <div className="slides-wrapper-modern">
+                {/* Slide 1: Hostel Details Component */}
+                {currentSlide === 0 && (
+                  <div className="slide-content-modern">
+                    <HostelDetailsTab
+                      hostelDetails={hostelDetails}
+                      onHostelDetailsChange={handleHostelDetailsChange}
+                      onLogoUpload={handleLogoUpload}
+                    />
+                  </div>
+                )}
 
-        {/* Amenity Modal Component */}
-        <AmenityModal
-          showAmenityModal={showAmenityModal}
-          currentRoomAmenities={currentRoomAmenities}
-          onClose={() => setShowAmenityModal(false)}
-          onAddRoomAmenity={addRoomAmenity}
-          onRemoveRoomAmenity={removeRoomAmenity}
-          onUpdateRoomAmenity={updateRoomAmenity}
-          onSaveRoomAmenities={saveRoomAmenities}
-        />
+                {/* Slide 2: General Amenities Component */}
+                {currentSlide === 1 && (
+                  <div className="slide-content-modern">
+                    <GeneralAmenitiesTab
+                      generalAmenities={generalAmenities}
+                      additionalInfo={additionalInfo}
+                      onAddGeneralAmenity={addGeneralAmenity}
+                      onRemoveGeneralAmenity={removeGeneralAmenity}
+                      onUpdateGeneralAmenity={updateGeneralAmenity}
+                      onAddAdditionalInfo={addAdditionalInfo}
+                      onRemoveAdditionalInfo={removeAdditionalInfo}
+                      onUpdateAdditionalInfo={updateAdditionalInfo}
+                    />
+                  </div>
+                )}
+
+                {/* Slide 3: Room Details Component */}
+                {currentSlide === 2 && (
+                  <div className="slide-content-modern">
+                    <RoomDetailsTab
+                      roomDetails={roomDetails}
+                      onAddRoom={addRoom}
+                      onRemoveRoom={removeRoom}
+                      onUpdateRoom={updateRoom}
+                      onOpenAmenityModal={openAmenityModal}
+                    />
+                  </div>
+                )}
+
+                {/* Slide 4: Submission Component */}
+                {currentSlide === 3 && (
+                  <div className="slide-content-modern">
+                    <SubmissionTab
+                      hostelDetails={hostelDetails}
+                      generalAmenities={generalAmenities}
+                      roomDetails={roomDetails}
+                      additionalInfo={additionalInfo}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Navigation Buttons Component */}
+            <div className="navigation-section-modern">
+              <NavigationButtons
+                currentSlide={currentSlide}
+                onPrevSlide={prevSlide}
+                onNextSlide={nextSlide}
+                onSubmit={handleSubmit}
+                hasHostel={hasHostel}
+              />
+            </div>
+          </form>
+
+          {/* Amenity Modal Component */}
+          <AmenityModal
+            showAmenityModal={showAmenityModal}
+            currentRoomAmenities={currentRoomAmenities}
+            onClose={() => setShowAmenityModal(false)}
+            onAddRoomAmenity={addRoomAmenity}
+            onRemoveRoomAmenity={removeRoomAmenity}
+            onUpdateRoomAmenity={updateRoomAmenity}
+            onSaveRoomAmenities={saveRoomAmenities}
+          />
+        </div>
       </div>
     );
   }
 
   // If hostel info exists, show comprehensive overview
   return (
-    <div className="hostel-settings">
-      <SettingsHeader
-        title="Settings"
-        subtitle="Manage your hostel configuration and preferences"
-        showActions={true}
-        onEdit={editHostelInfo}
-        onDelete={handleDeleteHostel}
-      />
+    <div className="hostel-settings-modern">
+      <div className="settings-container-modern">
+        <SettingsHeader
+          title="Settings"
+          subtitle="Manage your hostel configuration and preferences"
+          showActions={true}
+          onEdit={editHostelInfo}
+          onDelete={handleDeleteHostel}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
+        />
 
-      <SettingsTabsNavigation
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
+        <div className="settings-content-modern">
+          <SettingsTabsNavigation
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
 
-      <TabContent
-        activeTab={activeTab}
-        hostelInfo={hostelInfo}
-        bankingDetails={bankingDetails}
-        onBankingSave={handleBankingDetailsSave}
-      />
+          <div className="tab-content-wrapper-modern">
+            <TabContent
+              activeTab={activeTab}
+              hostelInfo={hostelInfo}
+              bankingDetails={bankingDetails}
+              onBankingSave={handleBankingDetailsSave}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

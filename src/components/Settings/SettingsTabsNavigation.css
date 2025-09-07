@@ -23,8 +23,8 @@
 }
 
 .tab-button:hover {
-  color: var(--text-primary);
-  background: var(--background-hover);
+  color: white;
+  background: var(--primary);
 }
 
 .tab-button.active {

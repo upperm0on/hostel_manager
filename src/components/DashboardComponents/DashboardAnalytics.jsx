@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -15,39 +15,135 @@ import './DashboardAnalytics.css';
 
 const DashboardAnalytics = ({ hostelInfo }) => {
   const [selectedPeriod, setSelectedPeriod] = useState('month');
+  const [tenants, setTenants] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [analyticsData, setAnalyticsData] = useState({
     occupancy: {
-      current: 87,
-      previous: 82,
-      trend: 'up',
+      current: 0,
+      previous: 0,
+      trend: 'stable',
       rooms: {
-        total: 45,
-        occupied: 39,
-        vacant: 6
+        total: 0,
+        occupied: 0,
+        vacant: 0
       }
     },
     revenue: {
-      current: 45600,
-      previous: 42300,
-      trend: 'up',
+      current: 0,
+      previous: 0,
+      trend: 'stable',
       breakdown: {
-        rent: 42000,
-        utilities: 2800,
-        services: 800
+        rent: 0,
+        utilities: 0,
+        services: 0
       }
     },
     tenants: {
-      total: 156,
-      active: 142,
-      new: 8,
+      total: 0,
+      active: 0,
+      new: 0,
       satisfaction: 4.2
     },
     payments: {
-      onTime: 89,
-      late: 8,
-      overdue: 3
+      onTime: 0,
+      late: 0,
+      overdue: 0
     }
   });
+
+  // Fetch tenants data for analytics
+  useEffect(() => {
+    const fetchTenants = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          console.log('No authentication token found');
+          return;
+        }
+
+        const response = await fetch('http://localhost:8080/hq/api/manager/tenants', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch tenants: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.status === 'success' && data.tenants) {
+          setTenants(data.tenants);
+        }
+        
+      } catch (err) {
+        console.error('Error fetching tenants for analytics:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTenants();
+  }, []);
+
+  // Calculate real analytics when tenants data changes
+  useEffect(() => {
+    if (hostelInfo && tenants.length >= 0) {
+      // Calculate real metrics from hostel data
+      const roomDetails = hostelInfo.room_details || [];
+      const totalRooms = roomDetails.reduce((sum, room) => sum + (parseInt(room.number_of_rooms) || 0), 0);
+      const totalCapacity = roomDetails.reduce((sum, room) => sum + (parseInt(room.number_of_rooms) * parseInt(room.number_in_room) || 0), 0);
+      
+      // Calculate real analytics from tenant data
+      const currentTenants = tenants.length;
+      const totalRevenue = tenants.reduce((sum, tenant) => sum + parseFloat(tenant.amount || 0), 0);
+      const occupancyRate = totalCapacity > 0 ? Math.round((currentTenants / totalCapacity) * 100) : 0;
+      
+      // Calculate payment status from tenant data
+      const onTimePayments = tenants.length; // All current tenants have paid
+      const totalExpectedPayments = totalCapacity; // Total capacity represents expected payments
+      const onTimePercentage = totalExpectedPayments > 0 ? Math.round((onTimePayments / totalExpectedPayments) * 100) : 100;
+
+      setAnalyticsData({
+        occupancy: {
+          current: occupancyRate,
+          previous: Math.max(0, occupancyRate - 5), // Simulate previous period with fixed decrease
+          trend: occupancyRate > 0 ? 'up' : 'stable',
+          rooms: {
+            total: totalRooms,
+            occupied: Math.floor((totalRooms * occupancyRate) / 100),
+            vacant: totalRooms - Math.floor((totalRooms * occupancyRate) / 100)
+          }
+        },
+        revenue: {
+          current: totalRevenue,
+          previous: Math.round(totalRevenue * 0.9), // Simulate previous period
+          trend: 'up',
+          breakdown: {
+            rent: Math.round(totalRevenue * 0.85),
+            utilities: Math.round(totalRevenue * 0.1),
+            services: Math.round(totalRevenue * 0.05)
+          }
+        },
+        tenants: {
+          total: totalCapacity,
+          active: currentTenants,
+          new: Math.max(0, Math.floor(currentTenants * 0.1)), // 10% of current tenants as "new"
+          satisfaction: 4.2 // Static for now
+        },
+        payments: {
+          onTime: onTimePercentage,
+          late: Math.max(0, 100 - onTimePercentage - 3),
+          overdue: Math.max(0, 100 - onTimePercentage - 2)
+        }
+      });
+    }
+  }, [hostelInfo, tenants]);
 
   // Update analytics data based on selected period
   React.useEffect(() => {

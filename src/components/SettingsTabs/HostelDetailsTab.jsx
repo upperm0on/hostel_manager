@@ -46,17 +46,6 @@ const HostelDetailsTab = ({
             </div>
           </div>
 
-          <div className="form-row full">
-            <div className="form-group">
-              <label className="form-label">Description</label>
-              <textarea
-                className="form-textarea"
-                placeholder="Describe your hostel"
-                value={hostelDetails.description}
-                onChange={(e) => onHostelDetailsChange('description', e.target.value)}
-              />
-            </div>
-          </div>
 
           <div className="form-group">
             <label className="form-label">Logo</label>
@@ -64,7 +53,12 @@ const HostelDetailsTab = ({
               <div className="logo-preview">
                 {hostelDetails.logo ? (
                   <img 
-                    src={URL.createObjectURL(hostelDetails.logo)} 
+                    src={typeof hostelDetails.logo === 'string' 
+                      ? (hostelDetails.logo.startsWith('http') 
+                          ? hostelDetails.logo 
+                          : `http://localhost:8080${hostelDetails.logo}`)
+                      : URL.createObjectURL(hostelDetails.logo)
+                    } 
                     alt="Logo preview" 
                   />
                 ) : (

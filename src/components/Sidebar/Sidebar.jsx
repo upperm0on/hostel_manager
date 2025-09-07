@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { 
   Home, 
   Users, 
-  CreditCard, 
+  BarChart3, 
   Settings, 
   ChevronDown,
   Menu,
@@ -20,7 +20,7 @@ const Sidebar = () => {
   const navItems = [
     { path: '/', icon: Home, label: 'Dashboard' },
     { path: '/tenants', icon: Users, label: 'Tenants' },
-    { path: '/payments', icon: CreditCard, label: 'Payments' },
+    { path: '/analytics', icon: BarChart3, label: 'Analytics & Reports' },
     { path: '/settings', icon: Settings, label: 'Settings' },
   ];
 
