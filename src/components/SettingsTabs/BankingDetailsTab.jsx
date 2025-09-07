@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   CreditCard, 
   Building, 
@@ -34,6 +34,35 @@ const BankingDetailsTab = ({ hostelInfo, onSave }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+
+  // Fetch banks data when component mounts
+  useEffect(() => {
+    const fetchBanks = async () => {
+      try {
+        console.log('Fetching banks data from hq/api/manager/banks...');
+        const response = await fetch('http://localhost:8080/hq/api/manager/banks', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            // Add authorization header if needed
+            // 'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const banksData = await response.json();
+        console.log('Banks API Response:', banksData);
+        
+      } catch (error) {
+        console.error('Error fetching banks data:', error);
+      }
+    };
+
+    fetchBanks();
+  }, []);
 
   const handleInputChange = (field, value) => {
     setBankingDetails(prev => ({ ...prev, [field]: value }));
