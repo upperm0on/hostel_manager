@@ -11,6 +11,7 @@ import {
   Calendar,
   DollarSign
 } from 'lucide-react';
+import { API_ENDPOINTS } from '../../config/api';
 import './TenantProfile.css';
 
 const TenantProfile = () => {
@@ -32,7 +33,7 @@ const TenantProfile = () => {
         }
 
         // First, get all tenants to find the specific one
-        const response = await fetch('http://localhost:8080/hq/api/manager/tenants', {
+        const response = await fetch(API_ENDPOINTS.TENANTS_LIST, {
           method: 'GET',
           headers: {
             'Authorization': `Token ${token}`,

@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { API_ENDPOINTS } from '../config/api';
+import { useAuth } from './AuthContext';
 
 // Create context for hostel state
 const HostelContext = createContext();
@@ -16,44 +18,61 @@ export const useHostel = () => {
 export const HostelProvider = ({ children }) => {
   const [hasHostel, setHasHostel] = useState(false);
   const [hostelInfo, setHostelInfo] = useState(null);
+  const { isAuthenticated } = useAuth();
 
   // Check if hostel exists and load data
   useEffect(() => {
-    const initializeHostelData = () => {
-      // Clean up old duplicate hostelData if it exists
-      const oldHostelData = localStorage.getItem('hostelData');
-      if (oldHostelData) {
-        console.log('Cleaning up old hostelData from localStorage');
-        localStorage.removeItem('hostelData');
-      }
+    const initializeHostelData = async () => {
+      const token = localStorage.getItem('token');
       
-      // Load from localStorage initially
-      const existingHostel = localStorage.getItem('hostelInfo');
-      if (existingHostel) {
-        try {
-          const parsed = JSON.parse(existingHostel);
-          // Parse additional_details and room_details if they're strings
-          if (parsed.additional_details && typeof parsed.additional_details === 'string') {
-            parsed.additional_details = JSON.parse(parsed.additional_details);
-          }
-          if (parsed.room_details && typeof parsed.room_details === 'string') {
-            parsed.room_details = JSON.parse(parsed.room_details);
-          }
-          setHostelInfo(parsed);
-          setHasHostel(true);
-          console.log('Hostel data loaded from localStorage');
-        } catch (e) {
-          console.error('Error parsing hostel data from localStorage:', e);
-          setHasHostel(false);
-        }
-      } else {
+      if (!token) {
+        console.log('No token found, user not authenticated');
         setHasHostel(false);
-        console.log('No hostel data found');
+        return;
+      }
+
+      try {
+        // Clean up old duplicate hostelData if it exists
+        const oldHostelData = localStorage.getItem('hostelData');
+        if (oldHostelData) {
+          console.log('Cleaning up old hostelData from localStorage');
+          localStorage.removeItem('hostelData');
+        }
+        
+        // First check localStorage
+        const existingHostel = localStorage.getItem('hostelInfo');
+        if (existingHostel) {
+          try {
+            const parsed = JSON.parse(existingHostel);
+            // Parse additional_details and room_details if they're strings
+            if (parsed.additional_details && typeof parsed.additional_details === 'string') {
+              parsed.additional_details = JSON.parse(parsed.additional_details);
+            }
+            if (parsed.room_details && typeof parsed.room_details === 'string') {
+              parsed.room_details = JSON.parse(parsed.room_details);
+            }
+            setHostelInfo(parsed);
+            setHasHostel(true);
+            console.log('Hostel data loaded from localStorage');
+          } catch (e) {
+            console.error('Error parsing hostel data from localStorage:', e);
+            setHasHostel(false);
+            setHostelInfo(null);
+          }
+        } else {
+          console.log('No hostel data found in localStorage');
+          setHasHostel(false);
+          setHostelInfo(null);
+        }
+      } catch (error) {
+        console.error('Error initializing hostel data:', error);
+        setHasHostel(false);
       }
     };
+
     
     initializeHostelData();
-  }, []);
+  }, [isAuthenticated]); // Re-run when authentication state changes
 
   // Helper function to transform frontend data to backend format
   const transformToBackendFormat = (hostelData) => {
@@ -124,7 +143,7 @@ export const HostelProvider = ({ children }) => {
       
       console.log('Sending data to backend:', backendData);
       
-      const response = await fetch('http://localhost:8080/hq/api/manager/update_or_create/', {
+      const response = await fetch(API_ENDPOINTS.HOSTEL_CREATE, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
@@ -167,7 +186,7 @@ export const HostelProvider = ({ children }) => {
       
       console.log('Sending data to backend:', backendData);
       
-      const response = await fetch('http://localhost:8080/hq/api/manager/update_or_create/', {
+      const response = await fetch(API_ENDPOINTS.HOSTEL_CREATE, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
@@ -206,7 +225,7 @@ export const HostelProvider = ({ children }) => {
       const token = localStorage.getItem('token');
       
       // Try the update_or_create endpoint with GET first
-      let response = await fetch('http://localhost:8080/hq/api/manager/update_or_create/', {
+      let response = await fetch(API_ENDPOINTS.HOSTEL_GET, {
         method: 'GET',
         headers: {
           'Authorization': `Token ${token}`,
@@ -216,7 +235,7 @@ export const HostelProvider = ({ children }) => {
 
       // If that doesn't work, try a dedicated hostel endpoint
       if (!response.ok) {
-        response = await fetch('http://localhost:8080/hq/api/manager/hostel/', {
+        response = await fetch(API_ENDPOINTS.HOSTEL_GET, {
           method: 'GET',
           headers: {
             'Authorization': `Token ${token}`,

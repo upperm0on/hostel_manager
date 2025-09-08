@@ -3,6 +3,7 @@ import { useHostel } from "../../contexts/HostelContext";
 import { useNavigate } from "react-router-dom";
 import { Users } from "lucide-react";
 import { TenantSearch, TenantTable } from "../../components/TenantComponents";
+import { API_ENDPOINTS } from "../../config/api";
 import "./Tenants.css";
 
 const Tenants = () => {
@@ -26,7 +27,7 @@ const Tenants = () => {
         }
 
         const response = await fetch(
-          "http://localhost:8080/hq/api/manager/tenants",
+          API_ENDPOINTS.TENANTS_LIST,
           {
             method: "GET",
             headers: {

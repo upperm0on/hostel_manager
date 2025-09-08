@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { LogoutModal } from '../Common';
 import { 
   Home, 
   Users, 
@@ -14,7 +15,8 @@ import './Sidebar.css';
 
 const Sidebar = () => {
   const location = useLocation();
-  const [isOpen, setIsOpen] = React.useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const { user, logout } = useAuth();
 
   const navItems = [
@@ -25,6 +27,19 @@ const Sidebar = () => {
   ];
 
   const toggleSidebar = () => setIsOpen(!isOpen);
+
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+  };
+
+  const handleLogoutConfirm = () => {
+    setShowLogoutModal(false);
+    logout();
+  };
+
+  const handleLogoutCancel = () => {
+    setShowLogoutModal(false);
+  };
 
   return (
     <>
@@ -76,7 +91,7 @@ const Sidebar = () => {
             </div>
             <button 
               className="sidebar-footer-logout"
-              onClick={logout}
+              onClick={handleLogoutClick}
               title="Logout"
             >
               <LogOut size={16} />
@@ -84,6 +99,13 @@ const Sidebar = () => {
           </div>
         </div>
       </aside>
+
+      {/* Logout Confirmation Modal */}
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={handleLogoutCancel}
+        onConfirm={handleLogoutConfirm}
+      />
     </>
   );
 };

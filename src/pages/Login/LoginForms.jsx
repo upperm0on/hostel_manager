@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { User, Eye, EyeOff, Lock } from "lucide-react";
+import { API_ENDPOINTS } from "../../config/api";
 import "../../assets/css/Login/SignUpForms.css";
 
 function LoginForms() {
@@ -26,7 +27,7 @@ function LoginForms() {
     setError(null);
 
     try {
-      const res = await fetch("http://localhost:8080/hq/api/login/", {
+      const res = await fetch(API_ENDPOINTS.LOGIN, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password, is_manager: true }),
@@ -47,7 +48,7 @@ function LoginForms() {
       const data = await res.json();
 
       if (data.token && data.status === "success") {
-        login(data);
+        await login(data);
         const from = location.state?.from?.pathname || "/";
         navigate(from, { replace: true });
       } else {
