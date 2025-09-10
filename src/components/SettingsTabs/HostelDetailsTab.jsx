@@ -56,7 +56,7 @@ const HostelDetailsTab = ({
                     src={typeof hostelDetails.logo === 'string' 
                       ? (hostelDetails.logo.startsWith('http') 
                           ? hostelDetails.logo 
-                          : `http://localhost:8080${hostelDetails.logo}`)
+                          : hostelDetails.logo)
                       : URL.createObjectURL(hostelDetails.logo)
                     } 
                     alt="Logo preview" 

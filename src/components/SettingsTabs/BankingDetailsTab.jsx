@@ -116,7 +116,7 @@ const BankingDetailsTab = ({ hostelInfo, onSave }) => {
       
       try {
         console.log('Fetching banks data from hq/api/manager/banks...');
-        const response = await fetch('http://localhost:8080/hq/api/manager/banks/', {
+        const response = await fetch('/hq/api/manager/banks/', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

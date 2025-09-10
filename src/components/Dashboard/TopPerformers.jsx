@@ -18,7 +18,7 @@ const RecentTenants = () => {
           return;
         }
 
-        const response = await fetch('http://localhost:8080/hq/api/manager/tenants', {
+        const response = await fetch('/hq/api/manager/tenants', {
           method: 'GET',
           headers: {
             'Authorization': `Token ${token}`,

@@ -52,7 +52,7 @@ const Analytics = () => {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:8080/hq/api/manager/tenants', {
+        const response = await fetch('/hq/api/manager/tenants', {
           headers: {
             'Authorization': `Token ${token}`,
             'Content-Type': 'application/json',

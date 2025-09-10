@@ -34,7 +34,7 @@ const HostelOverview = ({ hostelInfo }) => {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:8080/hq/api/manager/tenants', {
+        const response = await fetch('/hq/api/manager/tenants', {
           headers: {
             'Authorization': `Token ${token}`,
             'Content-Type': 'application/json',
@@ -328,7 +328,7 @@ const HostelOverview = ({ hostelInfo }) => {
             <div className="hero-logo-modern">
               {hostelDetails?.logo ? (
                 <img 
-                  src={hostelDetails.logo.startsWith('http') ? hostelDetails.logo : `http://localhost:8080${hostelDetails.logo}`} 
+                  src={hostelDetails.logo.startsWith('http') ? hostelDetails.logo : hostelDetails.logo} 
                   alt="Hostel Logo" 
                   className="hero-logo-image-modern"
                 />

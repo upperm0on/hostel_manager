@@ -45,7 +45,7 @@ The Hostel Management System is a comprehensive web application designed to mana
 - **Loading State**: UI shows loading indicator and disables submit button
 
 #### **API Communication**
-- **Endpoint**: `POST http://localhost:8080/hq/api/login/`
+- **Endpoint**: `POST /hq/api/login/`
 - **Request Payload**: JSON object containing username, password, and is_manager flag
 - **Headers**: Content-Type set to application/json
 
@@ -402,7 +402,7 @@ The Hostel Management System is a comprehensive web application designed to mana
 ### **API Communication Patterns**
 
 #### **Request Structure**
-- **Base URL**: http://localhost:8080/hq/api/
+- **Base URL**: /hq/api/ (relative paths)
 - **Authentication**: JWT token included in request headers
 - **Content Type**: JSON for most requests
 - **Error Handling**: Comprehensive error handling for different HTTP status codes

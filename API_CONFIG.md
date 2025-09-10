@@ -4,8 +4,8 @@
 All API endpoints are centralized in `/src/config/api.js` for easy management and deployment.
 
 ## Current Configuration
-- **Development**: `http://localhost:8080`
-- **Production**: Change `API_BASE_URL` in `/src/config/api.js`
+- **All Environments**: Uses relative paths (e.g., `/hq/api/login/`)
+- **Deployment**: No configuration needed - works with any domain
 
 ## Available Endpoints
 
@@ -33,26 +33,19 @@ All API endpoints are centralized in `/src/config/api.js` for easy management an
 ### Analytics (Future)
 - `ANALYTICS_DATA` - Get analytics data
 
-## How to Change API URL
+## How API URLs Work
 
-### Method 1: Manual Edit
-1. Open `/src/config/api.js`
-2. Change `API_BASE_URL` to your production URL:
-   ```javascript
-   const API_BASE_URL = 'https://api.yourhostel.com';
-   ```
+### Relative Paths
+All API endpoints now use relative paths (e.g., `/hq/api/login/`). This means:
+- ✅ **No configuration needed** for different environments
+- ✅ **Works automatically** with any domain (localhost, staging, production)
+- ✅ **Simpler deployment** - just deploy and it works
+- ✅ **No hardcoded URLs** in the codebase
 
-### Method 2: Using Script
-```bash
-# Update to production URL
-node scripts/update-api-url.js https://api.yourhostel.com
-
-# Update to staging URL
-node scripts/update-api-url.js https://staging-api.yourhostel.com
-
-# Update back to localhost
-node scripts/update-api-url.js http://localhost:8080
-```
+### Examples
+- Development: `http://localhost:3000/hq/api/login/`
+- Staging: `https://staging.yourhostel.com/hq/api/login/`
+- Production: `https://yourhostel.com/hq/api/login/`
 
 ## Files Updated
 The following files now use the centralized API configuration:
@@ -65,24 +58,24 @@ The following files now use the centralized API configuration:
 
 ## Benefits
 - 🎯 **Single Source of Truth** - All API URLs in one place
-- 🚀 **Easy Deployment** - Change one variable for production
+- 🚀 **Zero Configuration Deployment** - Works with any domain automatically
 - 🔧 **Maintainable** - No more hunting for hardcoded URLs
 - 📝 **Documented** - Clear list of all available endpoints
-- 🛠️ **Automated** - Script to update URLs quickly
+- 🌐 **Environment Agnostic** - Same code works everywhere
 
 ## Production Deployment
-1. Run the update script with your production API URL
+1. Deploy your frontend to any domain
+2. Ensure your backend API is available at the same domain
+3. That's it! No configuration needed
 2. Build your React app: `npm run build`
 3. Deploy the built files to your hosting service
 
-## Example Production URLs
+## Example URLs by Environment
 ```javascript
-// Production
-const API_BASE_URL = 'https://api.yourhostel.com';
+// All environments use the same relative paths:
+// Development: http://localhost:3000/hq/api/login/
+// Staging: https://staging.yourhostel.com/hq/api/login/
+// Production: https://yourhostel.com/hq/api/login/
 
-// Staging
-const API_BASE_URL = 'https://staging-api.yourhostel.com';
-
-// Development
-const API_BASE_URL = 'http://localhost:8080';
+// No configuration needed - works automatically!
 ```
