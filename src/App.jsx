@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard/Dashboard';
 import Tenants from './pages/Tenants/Tenants';
 import Analytics from './pages/Analytics/Analytics';
 import Settings from './pages/Settings/Settings';
+import Profile from './pages/Profile/Profile';
 import TenantProfile from './pages/Tenants/TenantProfile';
 import NoHostelState from './components/NoHostelState/NoHostelState';
 import LoginForms from './pages/Login/LoginForms';
@@ -62,6 +63,7 @@ function AppContent() {
               !hasHostel ? <NoHostelState /> : <Analytics />
             } />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

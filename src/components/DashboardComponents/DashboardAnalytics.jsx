@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_ENDPOINTS } from '../../config/api';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -63,7 +64,7 @@ const DashboardAnalytics = ({ hostelInfo }) => {
           return;
         }
 
-        const response = await fetch('/hq/api/manager/tenants', {
+        const response = await fetch(API_ENDPOINTS.TENANTS_LIST, {
           method: 'GET',
           headers: {
             'Authorization': `Token ${token}`,

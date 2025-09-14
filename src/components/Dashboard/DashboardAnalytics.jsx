@@ -11,6 +11,7 @@ import {
   Home,
   Activity
 } from 'lucide-react';
+import { API_ENDPOINTS } from '../../config/api';
 import './DashboardAnalytics.css';
 
 const DashboardAnalytics = ({ hostelInfo }) => {
@@ -56,14 +57,14 @@ const DashboardAnalytics = ({ hostelInfo }) => {
     const fetchTenants = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('Token');
         
         if (!token) {
           console.log('No authentication token found');
           return;
         }
 
-        const response = await fetch('/hq/api/manager/tenants', {
+        const response = await fetch(API_ENDPOINTS.TENANTS_LIST, {
           method: 'GET',
           headers: {
             'Authorization': `Token ${token}`,

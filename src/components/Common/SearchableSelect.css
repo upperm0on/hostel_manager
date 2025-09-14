@@ -1,0 +1,157 @@
+.searchable-select {
+  position: relative;
+  width: 100%;
+}
+
+.searchable-select-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: white;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.searchable-select-input:hover {
+  border-color: #9ca3af;
+}
+
+.searchable-select-input.open {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  color: #6b7280;
+  z-index: 1;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 40px 12px 40px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+}
+
+.search-input::placeholder {
+  color: #9ca3af;
+}
+
+.chevron-icon {
+  position: absolute;
+  right: 12px;
+  color: #6b7280;
+  transition: transform 0.2s ease;
+  z-index: 1;
+}
+
+.chevron-icon.rotated {
+  transform: rotate(180deg);
+}
+
+.searchable-select-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.dropdown-option {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 14px;
+  color: #374151;
+}
+
+.dropdown-option:hover {
+  background-color: #f9fafb;
+}
+
+.dropdown-option.selected {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 500;
+}
+
+.dropdown-option:last-child {
+  border-bottom: none;
+}
+
+.dropdown-no-results {
+  padding: 12px 16px;
+  color: #6b7280;
+  font-size: 14px;
+  text-align: center;
+  font-style: italic;
+}
+
+.dropdown-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  color: #6b7280;
+  font-size: 14px;
+  gap: 8px;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e5e7eb;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Form integration styles */
+.form-group .searchable-select {
+  margin-top: 4px;
+}
+
+.form-label .required {
+  color: #ef4444;
+  margin-left: 2px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .search-input {
+    padding: 10px 36px 10px 36px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  .search-icon,
+  .chevron-icon {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .dropdown-option {
+    padding: 10px 14px;
+    font-size: 16px;
+  }
+}

@@ -20,9 +20,13 @@
   border-radius: 16px;
   max-width: 480px;
   width: 100%;
+  max-height: 90vh;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   animation: slideUp 0.3s ease-out;
   border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 @keyframes fadeIn {
@@ -48,6 +52,7 @@
   justify-content: space-between;
   padding: 20px 24px 16px;
   border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
 .modal-title {
@@ -101,6 +106,30 @@
 /* Modal Content */
 .modal-content {
   padding: 20px 24px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  max-height: calc(90vh - 160px);
+}
+
+/* Custom scrollbar for confirmation modal content */
+.modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
 }
 
 .confirmation-message {
@@ -115,8 +144,10 @@
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  padding: 16px 24px 24px;
+  padding: 20px 24px;
   border-top: 1px solid var(--border);
+  background: var(--background-secondary);
+  flex-shrink: 0;
 }
 
 .btn {

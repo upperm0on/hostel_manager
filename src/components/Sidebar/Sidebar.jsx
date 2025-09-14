@@ -7,6 +7,7 @@ import {
   Users, 
   BarChart3, 
   Settings, 
+  User,
   ChevronDown,
   Menu,
   LogOut
@@ -24,6 +25,7 @@ const Sidebar = () => {
     { path: '/tenants', icon: Users, label: 'Tenants' },
     { path: '/analytics', icon: BarChart3, label: 'Analytics & Reports' },
     { path: '/settings', icon: Settings, label: 'Settings' },
+    { path: '/profile', icon: User, label: 'Profile' },
   ];
 
   const toggleSidebar = () => setIsOpen(!isOpen);

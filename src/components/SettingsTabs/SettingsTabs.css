@@ -30,11 +30,857 @@
   font-size: 0.9rem;
 }
 
-/* Enhanced Room Configuration Styles */
-.room-configuration-card {
-  border-top: 4px solid var(--primary);
-  border-radius: 0 0 16px 16px;
+/* Interactive Room Configuration Styles */
+.rooms-grid-interactive {
+  display: grid;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.room-card-interactive {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
+  position: relative;
+}
+
+.room-card-interactive:hover {
+  border-color: var(--primary);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.room-card-interactive.editing {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.room-card-interactive::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary), #8b5cf6);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.room-card-interactive.hovered::before {
+  opacity: 1;
+}
+
+.room-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 24px 20px 24px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.room-type-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.room-type-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--primary);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.room-number {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.room-quick-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.quick-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.room-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.action-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+.action-btn.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.delete-confirm {
+  display: flex;
+  gap: 4px;
+}
+
+.confirm-btn:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background: #6b7280;
+  border-color: #6b7280;
+  color: white;
+}
+
+/* Collapsible Form Styles */
+.room-form-collapsible {
+  padding: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.room-form-collapsible.collapsed {
+  max-height: 0;
+  padding: 0 24px;
+  opacity: 0;
+}
+
+.room-form-collapsible.expanded {
+  max-height: 1000px;
+  opacity: 1;
+}
+
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  font-size: 0.875rem;
+}
+
+/* Gender Selector Styles */
+.gender-selector {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gender-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--background);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+  flex: 1;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.gender-option-btn:hover {
+  border-color: var(--option-color);
+  background: rgba(var(--option-color), 0.05);
+  transform: translateY(-1px);
+}
+
+.gender-option-btn.active {
+  border-color: var(--option-color);
+  background: var(--option-color);
+  color: white;
+  box-shadow: 0 4px 12px rgba(var(--option-color), 0.3);
+}
+
+.gender-icon {
+  font-size: 1.2rem;
+}
+
+/* Mixed Gender Section */
+.mixed-gender-section {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 16px;
+}
+
+/* Enhanced Helper Styles */
+.gender-split-helper {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #0ea5e9;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 16px;
+}
+
+.helper-header {
+  font-weight: 600;
+  color: #0369a1;
+  margin-bottom: 16px;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.helper-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.helper-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #0369a1;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  background: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #0ea5e9;
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: #0369a1;
+  min-width: 50px;
+  text-align: center;
+}
+
+.stat-value.male {
+  color: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.stat-value.female {
+  color: #ec4899;
+  border-color: #ec4899;
+}
+
+.helper-warning {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  color: #92400e;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  justify-content: center;
+}
+
+/* Interactive Amenities Button */
+.room-amenities-section {
+  padding: 0 24px 16px 24px;
+  border-top: 1px solid var(--border);
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+/* Room Image Upload Section */
+.room-image-section {
+  padding: 16px 24px 24px 24px;
+  border-top: 1px solid var(--border);
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.image-upload-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.image-upload-label {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.image-upload-container {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.image-upload-container:hover {
+  border-color: #3b82f6;
+  background: #f8fafc;
+}
+
+.image-upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  color: #6b7280;
+}
+
+.upload-icon {
+  color: #9ca3af;
+  transition: color 0.3s ease;
+}
+
+.image-upload-container:hover .upload-icon {
+  color: #3b82f6;
+}
+
+.upload-text {
+  text-align: center;
+}
+
+.upload-title {
+  display: block;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.upload-subtitle {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.image-preview-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.room-image-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.image-preview-container:hover .image-overlay {
+  opacity: 1;
+}
+
+.image-preview-container:hover .room-image-preview {
+  transform: scale(1.05);
+}
+
+.image-change-btn,
+.image-remove-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.image-change-btn {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
+}
+
+.image-change-btn:hover {
+  background: white;
+  transform: translateY(-2px);
+}
+
+.image-remove-btn {
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  padding: 8px;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  justify-content: center;
+}
+
+.image-remove-btn:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+}
+
+.image-upload-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.image-upload-error {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Hostel Cover Image Upload */
+.cover-image-upload {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.cover-image-upload:hover {
+  border-color: #3b82f6;
+  background: #f8fafc;
+}
+
+.cover-image-upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+  color: #6b7280;
+}
+
+.cover-upload-icon {
+  color: #9ca3af;
+  transition: color 0.3s ease;
+}
+
+.cover-image-upload:hover .cover-upload-icon {
+  color: #3b82f6;
+}
+
+.cover-upload-text {
+  text-align: center;
+}
+
+.cover-upload-title {
+  display: block;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  font-size: 1rem;
+}
+
+.cover-upload-subtitle {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.cover-image-preview-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.cover-image-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.cover-image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.cover-image-preview-container:hover .cover-image-overlay {
+  opacity: 1;
+}
+
+.cover-image-preview-container:hover .cover-image-preview {
+  transform: scale(1.05);
+}
+
+.cover-image-change-btn,
+.cover-image-remove-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cover-image-change-btn {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
+}
+
+.cover-image-change-btn:hover {
+  background: white;
+  transform: translateY(-2px);
+}
+
+.cover-image-remove-btn {
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  padding: 10px;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  justify-content: center;
+}
+
+.cover-image-remove-btn:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+}
+
+.cover-image-upload-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.cover-image-upload-error {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Hero Cover Image */
+.hero-cover-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%);
+  z-index: 2;
+}
+
+.amenities-btn-interactive {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--background);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  margin-top: 16px;
+}
+
+.amenities-btn-interactive:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15);
+}
+
+.amenities-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+}
+
+.amenities-label {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.amenities-count {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.amenities-arrow {
+  font-size: 1.2rem;
+  color: var(--primary);
+  transition: transform 0.2s ease;
+}
+
+.amenities-btn-interactive:hover .amenities-arrow {
+  transform: translateX(4px);
+}
+
+/* Interactive Add Room Button */
+.add-room-btn-interactive {
+  position: relative;
+  overflow: hidden;
+  padding: 16px 32px;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.add-room-btn-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(59, 130, 246, 0.3);
+}
+
+.btn-glow {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.add-room-btn-interactive:hover .btn-glow {
+  left: 100%;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.input-with-suffix {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-suffix .form-input {
+  padding-right: 60px;
+}
+
+.input-suffix {
+  position: absolute;
+  right: 12px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  pointer-events: none;
+}
+
+.input-with-prefix {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-prefix .form-input {
+  padding-left: 32px;
+}
+
+.input-prefix {
+  position: absolute;
+  left: 12px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  pointer-events: none;
+}
+
+.room-amenities-section {
+  margin-top: 8px;
+}
+
+.amenities-btn-simple {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.amenities-btn-simple:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.add-room-section {
+  display: flex;
+  justify-content: center;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+/* Gender Split Helper Styles */
+.gender-split-helper {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.helper-text {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.helper-text:last-child {
+  margin-bottom: 0;
+}
+
+.helper-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.helper-value {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  font-weight: 600;
+  background: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  min-width: 40px;
+  text-align: center;
+}
+
+.helper-warning {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  color: #92400e;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  margin-top: 12px;
+  text-align: center;
 }
 
 /* Enhanced Section Header */
@@ -1891,6 +2737,635 @@
     flex-direction: column;
     align-items: flex-start;
   }
+  
+  /* Room Configuration Mobile Styles */
+  .rooms-grid-interactive {
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  
+  .room-card-interactive {
+    border-radius: 12px;
+    padding: 0;
+  }
+  
+  .room-card-header {
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+  }
+  
+  .room-type-info {
+    width: 100%;
+  }
+  
+  .room-quick-stats {
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  
+  .quick-stat {
+    font-size: 0.8rem;
+  }
+  
+  .room-actions {
+    align-self: flex-end;
+    gap: 8px;
+  }
+  
+  .action-btn {
+    padding: 8px;
+    min-width: 36px;
+    height: 36px;
+  }
+  
+  .room-form-collapsible {
+    padding: 16px;
+  }
+  
+  .form-group {
+    gap: 8px;
+  }
+  
+  .form-label {
+    font-size: 0.875rem;
+    gap: 6px;
+  }
+  
+  .form-input {
+    padding: 12px;
+    font-size: 0.875rem;
+  }
+  
+  .input-with-suffix,
+  .input-with-prefix {
+    font-size: 0.8rem;
+  }
+  
+  .gender-selector {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .gender-option-btn {
+    padding: 12px 16px;
+    font-size: 0.875rem;
+    justify-content: flex-start;
+  }
+  
+  .gender-icon {
+    font-size: 1.2rem;
+  }
+  
+  .mixed-gender-section {
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--background);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  
+  .gender-split-helper {
+    margin-top: 12px;
+    padding: 12px;
+  }
+  
+  .helper-stats {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .helper-stat {
+    justify-content: space-between;
+    padding: 8px 0;
+  }
+  
+  .room-amenities-section {
+    padding: 16px;
+    border-top: 1px solid var(--border);
+  }
+  
+  .amenities-btn-interactive {
+    padding: 12px 16px;
+    font-size: 0.875rem;
+  }
+  
+  .amenities-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .amenities-label {
+    font-size: 0.875rem;
+  }
+  
+  .amenities-count {
+    font-size: 0.75rem;
+  }
+  
+  .room-image-section {
+    padding: 16px;
+    border-top: 1px solid var(--border);
+  }
+  
+  .image-upload-header {
+    margin-bottom: 12px;
+    font-size: 0.875rem;
+  }
+  
+  .image-upload-container {
+    min-height: 120px;
+  }
+  
+  .image-upload-placeholder {
+    padding: 20px;
+  }
+  
+  .upload-icon {
+    margin-bottom: 8px;
+  }
+  
+  .upload-title {
+    font-size: 0.875rem;
+  }
+  
+  .upload-subtitle {
+    font-size: 0.75rem;
+  }
+  
+  .image-preview-container {
+    min-height: 120px;
+  }
+  
+  .room-image-preview {
+    max-height: 120px;
+  }
+  
+  .image-overlay {
+    padding: 8px;
+  }
+  
+  .image-change-btn,
+  .image-remove-btn {
+    padding: 6px 8px;
+    font-size: 0.75rem;
+  }
+  
+  .add-room-section {
+    margin-top: 24px;
+  }
+  
+  .add-room-btn-interactive {
+    width: 100%;
+    padding: 16px;
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Room Configuration Small Mobile Styles */
+  .rooms-grid-interactive {
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  
+  .room-card-header {
+    padding: 12px;
+    gap: 10px;
+  }
+  
+  .room-quick-stats {
+    gap: 6px;
+    margin-top: 6px;
+  }
+  
+  .quick-stat {
+    font-size: 0.75rem;
+  }
+  
+  .action-btn {
+    padding: 6px;
+    min-width: 32px;
+    height: 32px;
+  }
+  
+  .room-form-collapsible {
+    padding: 12px;
+  }
+  
+  .form-group {
+    gap: 6px;
+  }
+  
+  .form-label {
+    font-size: 0.8rem;
+    gap: 4px;
+  }
+  
+  .form-input {
+    padding: 10px;
+    font-size: 0.8rem;
+  }
+  
+  .input-with-suffix,
+  .input-with-prefix {
+    font-size: 0.75rem;
+  }
+  
+  .gender-option-btn {
+    padding: 10px 12px;
+    font-size: 0.8rem;
+  }
+  
+  .gender-icon {
+    font-size: 1.1rem;
+  }
+  
+  .mixed-gender-section {
+    margin-top: 12px;
+    padding: 12px;
+  }
+  
+  .gender-split-helper {
+    margin-top: 10px;
+    padding: 10px;
+  }
+  
+  .helper-stats {
+    gap: 6px;
+  }
+  
+  .helper-stat {
+    padding: 6px 0;
+    font-size: 0.8rem;
+  }
+  
+  .room-amenities-section {
+    padding: 12px;
+  }
+  
+  .amenities-btn-interactive {
+    padding: 10px 12px;
+    font-size: 0.8rem;
+  }
+  
+  .amenities-label {
+    font-size: 0.8rem;
+  }
+  
+  .amenities-count {
+    font-size: 0.7rem;
+  }
+  
+  .room-image-section {
+    padding: 12px;
+  }
+  
+  .image-upload-header {
+    margin-bottom: 10px;
+    font-size: 0.8rem;
+  }
+  
+  .image-upload-container {
+    min-height: 100px;
+  }
+  
+  .image-upload-placeholder {
+    padding: 16px;
+  }
+  
+  .upload-title {
+    font-size: 0.8rem;
+  }
+  
+  .upload-subtitle {
+    font-size: 0.7rem;
+  }
+  
+  .image-preview-container {
+    min-height: 100px;
+  }
+  
+  .room-image-preview {
+    max-height: 100px;
+  }
+  
+  .image-overlay {
+    padding: 6px;
+  }
+  
+  .image-change-btn,
+  .image-remove-btn {
+    padding: 4px 6px;
+    font-size: 0.7rem;
+  }
+  
+  .add-room-section {
+    margin-top: 20px;
+  }
+  
+  .add-room-btn-interactive {
+    padding: 14px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Room Configuration Extra Small Mobile Styles */
+  .rooms-grid-interactive {
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  
+  .room-card-header {
+    padding: 10px;
+    gap: 8px;
+  }
+  
+  .room-quick-stats {
+    gap: 4px;
+    margin-top: 4px;
+  }
+  
+  .quick-stat {
+    font-size: 0.7rem;
+  }
+  
+  .action-btn {
+    padding: 4px;
+    min-width: 28px;
+    height: 28px;
+  }
+  
+  .room-form-collapsible {
+    padding: 10px;
+  }
+  
+  .form-group {
+    gap: 4px;
+  }
+  
+  .form-label {
+    font-size: 0.75rem;
+    gap: 3px;
+  }
+  
+  .form-input {
+    padding: 8px;
+    font-size: 0.75rem;
+  }
+  
+  .input-with-suffix,
+  .input-with-prefix {
+    font-size: 0.7rem;
+  }
+  
+  .gender-option-btn {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+  }
+  
+  .gender-icon {
+    font-size: 1rem;
+  }
+  
+  .mixed-gender-section {
+    margin-top: 10px;
+    padding: 10px;
+  }
+  
+  .gender-split-helper {
+    margin-top: 8px;
+    padding: 8px;
+  }
+  
+  .helper-stats {
+    gap: 4px;
+  }
+  
+  .helper-stat {
+    padding: 4px 0;
+    font-size: 0.75rem;
+  }
+  
+  .room-amenities-section {
+    padding: 10px;
+  }
+  
+  .amenities-btn-interactive {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+  }
+  
+  .amenities-label {
+    font-size: 0.75rem;
+  }
+  
+  .amenities-count {
+    font-size: 0.65rem;
+  }
+  
+  .room-image-section {
+    padding: 10px;
+  }
+  
+  .image-upload-header {
+    margin-bottom: 8px;
+    font-size: 0.75rem;
+  }
+  
+  .image-upload-container {
+    min-height: 80px;
+  }
+  
+  .image-upload-placeholder {
+    padding: 12px;
+  }
+  
+  .upload-title {
+    font-size: 0.75rem;
+  }
+  
+  .upload-subtitle {
+    font-size: 0.65rem;
+  }
+  
+  .image-preview-container {
+    min-height: 80px;
+  }
+  
+  .room-image-preview {
+    max-height: 80px;
+  }
+  
+  .image-overlay {
+    padding: 4px;
+  }
+  
+  .image-change-btn,
+  .image-remove-btn {
+    padding: 3px 4px;
+    font-size: 0.65rem;
+  }
+  
+  .add-room-section {
+    margin-top: 16px;
+  }
+  
+  .add-room-btn-interactive {
+    padding: 12px;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 360px) {
+  /* Room Configuration Ultra Small Mobile Styles */
+  .rooms-grid-interactive {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  
+  .room-card-header {
+    padding: 8px;
+    gap: 6px;
+  }
+  
+  .room-quick-stats {
+    gap: 3px;
+    margin-top: 3px;
+  }
+  
+  .quick-stat {
+    font-size: 0.65rem;
+  }
+  
+  .action-btn {
+    padding: 3px;
+    min-width: 24px;
+    height: 24px;
+  }
+  
+  .room-form-collapsible {
+    padding: 8px;
+  }
+  
+  .form-group {
+    gap: 3px;
+  }
+  
+  .form-label {
+    font-size: 0.7rem;
+    gap: 2px;
+  }
+  
+  .form-input {
+    padding: 6px;
+    font-size: 0.7rem;
+  }
+  
+  .input-with-suffix,
+  .input-with-prefix {
+    font-size: 0.65rem;
+  }
+  
+  .gender-option-btn {
+    padding: 6px 8px;
+    font-size: 0.7rem;
+  }
+  
+  .gender-icon {
+    font-size: 0.9rem;
+  }
+  
+  .mixed-gender-section {
+    margin-top: 8px;
+    padding: 8px;
+  }
+  
+  .gender-split-helper {
+    margin-top: 6px;
+    padding: 6px;
+  }
+  
+  .helper-stats {
+    gap: 3px;
+  }
+  
+  .helper-stat {
+    padding: 3px 0;
+    font-size: 0.7rem;
+  }
+  
+  .room-amenities-section {
+    padding: 8px;
+  }
+  
+  .amenities-btn-interactive {
+    padding: 6px 8px;
+    font-size: 0.7rem;
+  }
+  
+  .amenities-label {
+    font-size: 0.7rem;
+  }
+  
+  .amenities-count {
+    font-size: 0.6rem;
+  }
+  
+  .room-image-section {
+    padding: 8px;
+  }
+  
+  .image-upload-header {
+    margin-bottom: 6px;
+    font-size: 0.7rem;
+  }
+  
+  .image-upload-container {
+    min-height: 60px;
+  }
+  
+  .image-upload-placeholder {
+    padding: 8px;
+  }
+  
+  .upload-title {
+    font-size: 0.7rem;
+  }
+  
+  .upload-subtitle {
+    font-size: 0.6rem;
+  }
+  
+  .image-preview-container {
+    min-height: 60px;
+  }
+  
+  .room-image-preview {
+    max-height: 60px;
+  }
+  
+  .image-overlay {
+    padding: 3px;
+  }
+  
+  .image-change-btn,
+  .image-remove-btn {
+    padding: 2px 3px;
+    font-size: 0.6rem;
+  }
+  
+  .add-room-section {
+    margin-top: 12px;
+  }
+  
+  .add-room-btn-interactive {
+    padding: 10px;
+    font-size: 0.7rem;
+  }
 }
 
 /* Modern Hostel Overview Styles */
@@ -2254,16 +3729,18 @@
 
 /* Modern Content Layout */
 .content-layout-modern {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 32px;
   margin-bottom: 48px;
+  width: 100%;
 }
 
 .content-main {
   display: flex;
   flex-direction: column;
   gap: 32px;
+  width: 100%;
 }
 
 .content-sidebar {
@@ -2957,11 +4434,7 @@
 /* Responsive Design for Modern Components */
 @media (max-width: 1200px) {
   .content-layout-modern {
-    flex-direction: column;
-  }
-  
-  .content-sidebar {
-    width: 100%;
+    gap: 24px;
   }
   
   .rooms-grid-modern {
@@ -2990,6 +4463,10 @@
   
   .hero-stat-item {
     text-align: center;
+  }
+  
+  .content-layout-modern {
+    gap: 20px;
   }
   
   .metrics-grid-modern {
@@ -3452,14 +4929,16 @@
 
 /* Room Type Sections */
 .room-type-sections-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 24px;
   margin-bottom: 32px;
+  width: 100%;
 }
 
 .room-type-section {
   margin-bottom: 0;
+  width: 100%;
 }
 
 .room-type-content {
@@ -3468,13 +4947,14 @@
 
 .room-type-overview {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px;
   margin-bottom: 24px;
   padding: 16px;
   background: var(--background);
   border-radius: 8px;
   border: 1px solid var(--border);
+  width: 100%;
 }
 
 .overview-item {
@@ -3498,19 +4978,21 @@
 /* Responsive Design for Room Type Sections */
 @media (max-width: 1200px) {
   .room-type-sections-container {
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 20px;
+  }
+  
+  .room-type-overview {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   }
 }
 
 @media (max-width: 768px) {
   .room-type-sections-container {
-    grid-template-columns: 1fr;
     gap: 16px;
   }
   
   .room-type-overview {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 12px;
   }
 }
@@ -3786,5 +5268,603 @@
   
   .performance-metrics {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 500px) {
+  .content-layout-modern {
+    gap: 2%;
+  }
+  
+  .section-card-modern {
+    padding: 2%;
+    border-radius: 16px;
+  }
+  
+  .section-header-modern {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2%;
+    margin-bottom: 3%;
+    padding-bottom: 2%;
+  }
+  
+  .section-title-modern {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1%;
+  }
+  
+  .section-text-modern h3 {
+    font-size: 1.25rem;
+  }
+  
+  .section-text-modern p {
+    font-size: 0.875rem;
+  }
+  
+  .section-badge-modern {
+    align-self: flex-start;
+  }
+  
+  .metrics-grid-modern {
+    grid-template-columns: 1fr;
+    gap: 2%;
+  }
+  
+  .metric-card-modern {
+    padding: 2%;
+  }
+  
+  .metric-icon-modern {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .metric-number-modern {
+    font-size: 1.75rem;
+  }
+  
+  .metric-label-modern {
+    font-size: 0.875rem;
+  }
+  
+  .metric-subtitle-modern {
+    font-size: 0.75rem;
+  }
+  
+  .room-type-overview {
+    grid-template-columns: 1fr;
+    gap: 1.5%;
+    padding: 1.5%;
+  }
+  
+  .overview-item {
+    text-align: center;
+  }
+  
+  .overview-label {
+    font-size: 0.8rem;
+  }
+  
+  .overview-value {
+    font-size: 1rem;
+  }
+  
+  .room-distribution-modern {
+    gap: 2%;
+  }
+  
+  .distribution-item-modern {
+    padding: 2%;
+  }
+  
+  .distribution-header-modern {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1%;
+  }
+  
+  .distribution-info-modern {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5%;
+  }
+  
+  .room-type-modern {
+    font-size: 1rem;
+  }
+  
+  .room-count-modern {
+    font-size: 0.8rem;
+  }
+  
+  .distribution-percentage-modern {
+    font-size: 1.5rem;
+    align-self: flex-end;
+  }
+  
+  .distribution-details-modern {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1%;
+  }
+  
+  .price-modern {
+    font-size: 0.875rem;
+  }
+  
+  .occupancy-modern {
+    font-size: 0.75rem;
+  }
+  
+  .overview-summary-modern {
+    flex-direction: column;
+    gap: 1%;
+    padding: 1.5%;
+  }
+  
+  .summary-item {
+    font-size: 0.875rem;
+    text-align: center;
+  }
+  
+  .room-metrics-modern {
+    grid-template-columns: 1fr;
+    gap: 1.5%;
+  }
+  
+  .room-metric-item {
+    padding: 1.5%;
+  }
+  
+  .room-metric-label {
+    font-size: 0.8rem;
+  }
+  
+  .room-metric-value {
+    font-size: 1rem;
+  }
+  
+  .gender-grid-modern {
+    grid-template-columns: 1fr;
+    gap: 1.5%;
+  }
+  
+  .gender-item-modern {
+    padding: 1.5%;
+  }
+  
+  .gender-label-modern {
+    font-size: 0.8rem;
+  }
+  
+  .gender-value-modern {
+    font-size: 1rem;
+  }
+  
+  .amenities-grid-modern {
+    grid-template-columns: 1fr;
+    gap: 1%;
+  }
+  
+  .amenity-item-modern {
+    padding: 1%;
+  }
+  
+  .amenity-name-modern {
+    font-size: 0.8rem;
+  }
+  
+  .hostel-overview-container {
+    padding: 0 1.5%;
+  }
+  
+  .hostel-hero {
+    padding: 2.5%;
+    margin-bottom: 2.5%;
+  }
+  
+  .hero-title {
+    font-size: 1.75rem;
+  }
+  
+  .hero-location {
+    font-size: 0.875rem;
+  }
+  
+  .stats-grid {
+    gap: 2%;
+  }
+  
+  .stat-card {
+    padding: 2%;
+  }
+  
+  .stat-number {
+    font-size: 2rem;
+  }
+  
+  .stat-label {
+    font-size: 0.875rem;
+  }
+  
+  .overview-card {
+    padding: 2%;
+  }
+  
+  .performance-metrics {
+    gap: 1.5%;
+  }
+}
+
+@media (max-width: 400px) {
+  .content-layout-modern {
+    gap: 1.5%;
+  }
+  
+  .section-card-modern {
+    padding: 1.5%;
+    border-radius: 12px;
+  }
+  
+  .section-header-modern {
+    margin-bottom: 2.5%;
+    padding-bottom: 1.5%;
+  }
+  
+  .section-text-modern h3 {
+    font-size: 1.125rem;
+  }
+  
+  .section-text-modern p {
+    font-size: 0.8rem;
+  }
+  
+  .metric-card-modern {
+    padding: 1.5%;
+  }
+  
+  .metric-icon-modern {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .metric-number-modern {
+    font-size: 1.5rem;
+  }
+  
+  .metric-label-modern {
+    font-size: 0.8rem;
+  }
+  
+  .metric-subtitle-modern {
+    font-size: 0.7rem;
+  }
+  
+  .room-type-overview {
+    padding: 1.25%;
+  }
+  
+  .overview-label {
+    font-size: 0.75rem;
+  }
+  
+  .overview-value {
+    font-size: 0.9rem;
+  }
+  
+  .distribution-item-modern {
+    padding: 1.5%;
+  }
+  
+  .room-type-modern {
+    font-size: 0.9rem;
+  }
+  
+  .room-count-modern {
+    font-size: 0.75rem;
+  }
+  
+  .distribution-percentage-modern {
+    font-size: 1.25rem;
+  }
+  
+  .price-modern {
+    font-size: 0.8rem;
+  }
+  
+  .occupancy-modern {
+    font-size: 0.7rem;
+  }
+  
+  .overview-summary-modern {
+    padding: 1.25%;
+  }
+  
+  .summary-item {
+    font-size: 0.8rem;
+  }
+  
+  .room-metric-item {
+    padding: 1.25%;
+  }
+  
+  .room-metric-label {
+    font-size: 0.75rem;
+  }
+  
+  .room-metric-value {
+    font-size: 0.9rem;
+  }
+  
+  .gender-item-modern {
+    padding: 1.25%;
+  }
+  
+  .gender-label-modern {
+    font-size: 0.75rem;
+  }
+  
+  .gender-value-modern {
+    font-size: 0.9rem;
+  }
+  
+  .amenity-item-modern {
+    padding: 0.75%;
+  }
+  
+  .amenity-name-modern {
+    font-size: 0.75rem;
+  }
+  
+  .hostel-overview-container {
+    padding: 0 1.25%;
+  }
+  
+  .hostel-hero {
+    padding: 2%;
+    margin-bottom: 2%;
+  }
+  
+  .stats-grid {
+    gap: 1.5%;
+  }
+  
+  .stat-card {
+    padding: 1.5%;
+  }
+  
+  .overview-card {
+    padding: 1.5%;
+  }
+  
+  .performance-metrics {
+    gap: 1%;
+  }
+}
+
+@media (max-width: 360px) {
+  .content-layout-modern {
+    gap: 1%;
+  }
+  
+  .section-card-modern {
+    padding: 1%;
+    border-radius: 8px;
+  }
+  
+  .section-header-modern {
+    margin-bottom: 2%;
+    padding-bottom: 1%;
+  }
+  
+  .section-text-modern h3 {
+    font-size: 1rem;
+  }
+  
+  .section-text-modern p {
+    font-size: 0.75rem;
+  }
+  
+  .metric-card-modern {
+    padding: 1%;
+  }
+  
+  .metric-icon-modern {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .metric-number-modern {
+    font-size: 1.25rem;
+  }
+  
+  .metric-label-modern {
+    font-size: 0.75rem;
+  }
+  
+  .metric-subtitle-modern {
+    font-size: 0.65rem;
+  }
+  
+  .room-type-overview {
+    padding: 1%;
+  }
+  
+  .overview-label {
+    font-size: 0.7rem;
+  }
+  
+  .overview-value {
+    font-size: 0.8rem;
+  }
+  
+  .distribution-item-modern {
+    padding: 1%;
+  }
+  
+  .room-type-modern {
+    font-size: 0.8rem;
+  }
+  
+  .room-count-modern {
+    font-size: 0.7rem;
+  }
+  
+  .distribution-percentage-modern {
+    font-size: 1.125rem;
+  }
+  
+  .price-modern {
+    font-size: 0.75rem;
+  }
+  
+  .occupancy-modern {
+    font-size: 0.65rem;
+  }
+  
+  .overview-summary-modern {
+    padding: 1%;
+  }
+  
+  .summary-item {
+    font-size: 0.75rem;
+  }
+  
+  .room-metric-item {
+    padding: 1%;
+  }
+  
+  .room-metric-label {
+    font-size: 0.7rem;
+  }
+  
+  .room-metric-value {
+    font-size: 0.8rem;
+  }
+  
+  .gender-item-modern {
+    padding: 1%;
+  }
+  
+  .gender-label-modern {
+    font-size: 0.7rem;
+  }
+  
+  .gender-value-modern {
+    font-size: 0.8rem;
+  }
+  
+  .amenity-item-modern {
+    padding: 0.5%;
+  }
+  
+  .amenity-name-modern {
+    font-size: 0.7rem;
+  }
+  
+  .hostel-overview-container {
+    padding: 0 1%;
+  }
+  
+  .hostel-hero {
+    padding: 1.5%;
+    margin-bottom: 1.5%;
+  }
+  
+  .hero-title {
+    font-size: 1.25rem;
+  }
+  
+  .hero-location {
+    font-size: 0.75rem;
+  }
+  
+  .stats-grid {
+    gap: 1%;
+  }
+  
+  .stat-card {
+    padding: 1%;
+  }
+  
+  .stat-number {
+    font-size: 1.5rem;
+  }
+  
+  .stat-label {
+    font-size: 0.75rem;
+  }
+  
+  .overview-card {
+    padding: 1%;
+  }
+  
+  .performance-metrics {
+    gap: 0.75%;
+  }
+  
+  .actions-grid-modern {
+    gap: 6px;
+  }
+  
+  .action-card-modern {
+    padding: 10px;
+    gap: 6px;
+  }
+  
+  .action-icon-modern {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .action-title-modern {
+    font-size: 0.8rem;
+  }
+  
+  .action-subtitle-modern {
+    font-size: 0.7rem;
+  }
+  
+  .hostel-overview-container {
+    padding: 0 8px;
+  }
+  
+  .hostel-hero {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .hero-title {
+    font-size: 1.5rem;
+  }
+  
+  .hero-location {
+    font-size: 0.8rem;
+  }
+  
+  .stats-grid {
+    gap: 12px;
+  }
+  
+  .stat-card {
+    padding: 12px;
+  }
+  
+  .stat-number {
+    font-size: 1.75rem;
+  }
+  
+  .stat-label {
+    font-size: 0.8rem;
+  }
+  
+  .overview-card {
+    padding: 12px;
+  }
+  
+  .performance-metrics {
+    gap: 8px;
   }
 }

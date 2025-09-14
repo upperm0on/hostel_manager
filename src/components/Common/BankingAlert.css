@@ -1,0 +1,156 @@
+/* Banking Alert Styles */
+.banking-alert {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #f59e0b;
+  border-left: 4px solid #f59e0b;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+  animation: slideInDown 0.3s ease-out;
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.banking-alert-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+}
+
+.banking-alert-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: #f59e0b;
+  border-radius: 10px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.banking-alert-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.banking-alert-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #92400e;
+  margin: 0 0 4px 0;
+  line-height: 1.4;
+}
+
+.banking-alert-message {
+  font-size: 0.875rem;
+  color: #92400e;
+  margin: 0;
+  line-height: 1.5;
+  opacity: 0.9;
+}
+
+.banking-alert-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.banking-alert-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.banking-alert-btn-primary {
+  background: #f59e0b;
+  color: white;
+  border: 1px solid #f59e0b;
+}
+
+.banking-alert-btn-primary:hover {
+  background: #d97706;
+  border-color: #d97706;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.banking-alert-btn-dismiss {
+  background: transparent;
+  color: #92400e;
+  border: 1px solid #f59e0b;
+  padding: 10px;
+  min-width: 40px;
+  justify-content: center;
+}
+
+.banking-alert-btn-dismiss:hover {
+  background: #f59e0b;
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .banking-alert-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .banking-alert-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .banking-alert-btn-primary {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .banking-alert-btn-dismiss {
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .banking-alert {
+    margin-bottom: 16px;
+  }
+
+  .banking-alert-content {
+    padding: 16px 20px;
+  }
+
+  .banking-alert-title {
+    font-size: 0.9rem;
+  }
+
+  .banking-alert-message {
+    font-size: 0.8rem;
+  }
+
+  .banking-alert-btn {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+}

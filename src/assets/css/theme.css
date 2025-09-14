@@ -53,6 +53,42 @@
   box-sizing: border-box;
 }
 
+html {
+  padding: 0;
+  margin: 0;
+}
+
+/* Responsive html padding for small screens */
+@media (max-width: 500px) {
+  html {
+    padding: 0 2%;
+  }
+}
+
+@media (max-width: 480px) {
+  html {
+    padding: 0 1.5%;
+  }
+}
+
+@media (max-width: 400px) {
+  html {
+    padding: 0 1%;
+  }
+}
+
+@media (max-width: 360px) {
+  html {
+    padding: 0 0.8%;
+  }
+}
+
+@media (max-width: 320px) {
+  html {
+    padding: 0 0.5%;
+  }
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
@@ -62,6 +98,39 @@ body {
   background-color: var(--background);
   color: var(--text-primary);
   line-height: 1.6;
+  padding: 0;
+  margin: 0;
+}
+
+/* Responsive body padding for small screens */
+@media (max-width: 500px) {
+  body {
+    padding: 0 2%;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 0 1.5%;
+  }
+}
+
+@media (max-width: 400px) {
+  body {
+    padding: 0 1%;
+  }
+}
+
+@media (max-width: 360px) {
+  body {
+    padding: 0 0.8%;
+  }
+}
+
+@media (max-width: 320px) {
+  body {
+    padding: 0 0.5%;
+  }
 }
 
 /* Button base styles */
@@ -571,4 +640,101 @@ body {
   transform: translateZ(0);
   backface-visibility: hidden;
   perspective: 1000px;
+}
+
+/* Global Responsive Fixes */
+* {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+body {
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+/* Additional Responsive Grid Utilities */
+.grid-auto-fit-sm { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.grid-auto-fit-md { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+.grid-auto-fit-lg { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.grid-auto-fit-xl { grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); }
+
+@media (max-width: 768px) {
+  .grid-auto-fit-sm,
+  .grid-auto-fit-md,
+  .grid-auto-fit-lg,
+  .grid-auto-fit-xl {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Responsive Container Classes */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.container-sm {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.container-lg {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+@media (max-width: 640px) {
+  .container,
+  .container-sm,
+  .container-lg {
+    padding: 0 2%;
+  }
+}
+
+@media (max-width: 500px) {
+  .container,
+  .container-sm,
+  .container-lg {
+    padding: 0 1.5%;
+  }
+}
+
+@media (max-width: 480px) {
+  .container,
+  .container-sm,
+  .container-lg {
+    padding: 0 1%;
+  }
+}
+
+@media (max-width: 400px) {
+  .container,
+  .container-sm,
+  .container-lg {
+    padding: 0 0.8%;
+  }
+}
+
+@media (max-width: 360px) {
+  .container,
+  .container-sm,
+  .container-lg {
+    padding: 0 0.5%;
+  }
+}
+
+@media (max-width: 320px) {
+  .container,
+  .container-sm,
+  .container-lg {
+    padding: 0 0.3%;
+  }
 }

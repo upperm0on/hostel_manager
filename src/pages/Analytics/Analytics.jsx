@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useHostel } from '../../contexts/HostelContext';
+import { useNavigate } from 'react-router-dom';
+import { API_ENDPOINTS } from '../../config/api';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -31,14 +33,20 @@ import {
   AirVent,
   X
 } from 'lucide-react';
+import BankingAlert from '../../components/Common/BankingAlert';
 import './Analytics.css';
 
 const Analytics = () => {
   const { hostelInfo } = useHostel();
+  const navigate = useNavigate();
   const [selectedPeriod, setSelectedPeriod] = useState('semester');
   const [selectedView, setSelectedView] = useState('overview');
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  const handleCompleteBanking = () => {
+    navigate('/settings?tab=banking');
+  };
   
   // Modal states
   const [showOccupancyModal, setShowOccupancyModal] = useState(false);
@@ -52,7 +60,7 @@ const Analytics = () => {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
-        const response = await fetch('/hq/api/manager/tenants', {
+        const response = await fetch(API_ENDPOINTS.TENANTS_LIST, {
           headers: {
             'Authorization': `Token ${token}`,
             'Content-Type': 'application/json',
@@ -217,6 +225,7 @@ const Analytics = () => {
 
   return (
     <div className="analytics-container">
+      <BankingAlert onComplete={handleCompleteBanking} />
       {/* Header */}
       <div className="analytics-header">
         <div className="header-content">

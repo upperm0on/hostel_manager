@@ -511,6 +511,7 @@ const Settings = () => {
               hostelInfo={hostelInfo}
               bankingDetails={bankingDetails}
               onBankingSave={handleBankingDetailsSave}
+              onTabChange={setActiveTab}
             />
           </div>
         </div>

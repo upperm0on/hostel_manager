@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Home, DollarSign, AlertCircle } from 'lucide-react';
+import { API_ENDPOINTS } from '../../config/api';
 import StatCard from '../StatCard/StatCard';
 import './DashboardComponents.css';
 
@@ -25,7 +26,7 @@ const DashboardStats = ({ hostelInfo }) => {
           return;
         }
 
-        const response = await fetch('/hq/api/manager/tenants', {
+        const response = await fetch(API_ENDPOINTS.TENANTS_LIST, {
           method: 'GET',
           headers: {
             'Authorization': `Token ${token}`,

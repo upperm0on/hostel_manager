@@ -1,7 +1,7 @@
 // API Configuration
-// All endpoints are now relative paths for better deployment flexibility
+// Using relative endpoints for better flexibility
 
-// API Endpoints
+// API Endpoints - All relative paths
 export const API_ENDPOINTS = {
   // Authentication
   LOGIN: '/hq/api/login/',
@@ -20,15 +20,18 @@ export const API_ENDPOINTS = {
   TENANTS_LIST: '/hq/api/manager/tenants',
   TENANT_DETAIL: '/hq/api/manager/tenants/',
   
-  // Payments (when you add them)
+  // Payments
   PAYMENTS_LIST: '/hq/api/manager/payments',
   PAYMENT_CREATE: '/hq/api/manager/payments/',
   
-  // Analytics (when you add them)
+  // Analytics
   ANALYTICS_DATA: '/hq/api/manager/analytics/',
+  
+  // Campus Search
+  CAMPUS_SEARCH: '/hq/api/search_request/',
 };
 
-// Helper function to get full URL (now just returns the endpoint as it's already relative)
+// Helper function to get full URL (now just returns the endpoint as-is)
 export const getApiUrl = (endpoint) => {
   return endpoint;
 };

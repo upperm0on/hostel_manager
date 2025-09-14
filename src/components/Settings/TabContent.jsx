@@ -1,8 +1,15 @@
 import React from 'react';
 import { HostelOverview, BankingDetailsTab } from '../SettingsTabs';
+import BankingAlert from '../Common/BankingAlert';
 import './TabContent.css';
 
-const TabContent = ({ activeTab, hostelInfo, bankingDetails, onBankingSave }) => {
+const TabContent = ({ activeTab, hostelInfo, bankingDetails, onBankingSave, onTabChange }) => {
+  const handleCompleteBanking = () => {
+    if (onTabChange) {
+      onTabChange('banking');
+    }
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'hostel':
@@ -29,6 +36,7 @@ const TabContent = ({ activeTab, hostelInfo, bankingDetails, onBankingSave }) =>
 
   return (
     <div className="tab-content">
+      <BankingAlert onComplete={handleCompleteBanking} />
       {renderTabContent()}
     </div>
   );

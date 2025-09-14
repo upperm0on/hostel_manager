@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Users } from "lucide-react";
 import { TenantSearch, TenantTable } from "../../components/TenantComponents";
 import { API_ENDPOINTS } from "../../config/api";
+import BankingAlert from "../../components/Common/BankingAlert";
 import "./Tenants.css";
 
 const Tenants = () => {
@@ -13,6 +14,10 @@ const Tenants = () => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  const handleCompleteBanking = () => {
+    navigate('/settings?tab=banking');
+  };
 
   // Fetch tenants from backend API
   useEffect(() => {
@@ -131,6 +136,7 @@ const Tenants = () => {
 
   return (
     <div className="tenants-page">
+      <BankingAlert onComplete={handleCompleteBanking} />
       <div className="page-header">
         <div className="page-header-content">
           <div>

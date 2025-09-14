@@ -13,6 +13,7 @@ import {
   Filler,
 } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
+import { API_ENDPOINTS } from '../../config/api';
 import './DashboardCharts.css';
 
 // Register Chart.js components
@@ -30,6 +31,7 @@ ChartJS.register(
 
 const DashboardCharts = ({ hostelInfo }) => {
   const [tenants, setTenants] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [chartData, setChartData] = useState({
     occupancyData: [0, 0, 0, 0, 0, 0, 0],
@@ -50,19 +52,20 @@ const DashboardCharts = ({ hostelInfo }) => {
     };
   }, [occupancyChartId, revenueChartId]);
 
-  // Fetch tenants data for charts
+  // Fetch tenants and payments data for charts
   useEffect(() => {
-    const fetchTenants = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('Token');
         
         if (!token) {
           console.log('No authentication token found');
           return;
         }
 
-        const response = await fetch('/hq/api/manager/tenants', {
+        // Fetch tenants data
+        const tenantsResponse = await fetch(API_ENDPOINTS.TENANTS_LIST, {
           method: 'GET',
           headers: {
             'Authorization': `Token ${token}`,
@@ -70,66 +73,113 @@ const DashboardCharts = ({ hostelInfo }) => {
           },
         });
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch tenants: ${response.status}`);
+        if (tenantsResponse.ok) {
+          const tenantsData = await tenantsResponse.json();
+          if (tenantsData.status === 'success' && tenantsData.tenants) {
+            setTenants(tenantsData.tenants);
+          }
         }
 
-        const data = await response.json();
-        
-        if (data.status === 'success' && data.tenants) {
-          setTenants(data.tenants);
+        // Fetch payments data
+        const paymentsResponse = await fetch(API_ENDPOINTS.PAYMENTS_LIST, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (paymentsResponse.ok) {
+          const paymentsData = await paymentsResponse.json();
+          if (paymentsData.status === 'success' && paymentsData.payments) {
+            setPayments(paymentsData.payments);
+          }
         }
         
       } catch (err) {
-        console.error('Error fetching tenants for charts:', err);
+        console.error('Error fetching data for charts:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTenants();
+    fetchData();
   }, []);
 
-  // Calculate chart data when tenants data changes
+  // Calculate chart data when data changes
   useEffect(() => {
-    if (hostelInfo && tenants.length >= 0) {
+    if (hostelInfo && (tenants.length >= 0 || payments.length >= 0)) {
       // Calculate real metrics from hostel data
       const roomDetails = hostelInfo.room_details || [];
       const totalCapacity = roomDetails.reduce((sum, room) => sum + (parseInt(room.number_of_rooms) * parseInt(room.number_in_room) || 0), 0);
       
-      // Calculate current occupancy and revenue
+      // Calculate current occupancy
       const currentTenants = tenants.length;
-      const currentRevenue = tenants.reduce((sum, tenant) => sum + parseFloat(tenant.amount || 0), 0);
       const currentOccupancy = totalCapacity > 0 ? Math.round((currentTenants / totalCapacity) * 100) : 0;
       
-      // Generate trend data based on current data (simulate weekly progression)
+      // Calculate real revenue from payments data
+      const currentRevenue = payments.reduce((sum, payment) => {
+        return sum + parseFloat(payment.amount || 0);
+      }, 0);
+      
+      // Generate weekly trend data based on real data
       const occupancyData = [];
       const revenueData = [];
+      const labels = [];
       
-      // Create a realistic trend starting from a lower point and building up
-      const baseOccupancy = Math.max(0, currentOccupancy - 15);
-      const baseRevenue = Math.max(0, currentRevenue - (currentRevenue * 0.3));
+      // Create weekly labels for the last 7 weeks
+      const today = new Date();
+      for (let i = 6; i >= 0; i--) {
+        const weekDate = new Date(today);
+        weekDate.setDate(today.getDate() - (i * 7));
+        labels.push(`Week ${7 - i}`);
+      }
       
-      for (let i = 0; i < 7; i++) {
-        // Simulate gradual growth with some variation
-        const occupancyGrowth = (currentOccupancy - baseOccupancy) * (i / 6);
-        const revenueGrowth = (currentRevenue - baseRevenue) * (i / 6);
+      // Calculate weekly occupancy based on tenant creation dates
+      for (let i = 6; i >= 0; i--) {
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - ((i + 1) * 7));
+        const weekEnd = new Date(today);
+        weekEnd.setDate(today.getDate() - (i * 7));
         
-        const variation = (Math.random() - 0.5) * 5; // ±2.5% variation
-        const occupancyValue = Math.max(0, Math.min(100, baseOccupancy + occupancyGrowth + variation));
-        const revenueValue = Math.max(0, baseRevenue + revenueGrowth + (Math.random() - 0.5) * 2000);
+        // Count tenants who moved in before or during this week
+        const tenantsInWeek = tenants.filter(tenant => {
+          if (!tenant.date_created) return false;
+          const moveInDate = new Date(tenant.date_created);
+          return moveInDate <= weekEnd;
+        }).length;
         
-        occupancyData.push(Math.round(occupancyValue));
-        revenueData.push(Math.round(revenueValue));
+        const weeklyOccupancy = totalCapacity > 0 ? Math.round((tenantsInWeek / totalCapacity) * 100) : 0;
+        occupancyData.push(weeklyOccupancy);
+      }
+      
+      // Calculate weekly revenue based on payment dates
+      for (let i = 6; i >= 0; i--) {
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - ((i + 1) * 7));
+        const weekEnd = new Date(today);
+        weekEnd.setDate(today.getDate() - (i * 7));
+        
+        // Sum payments made during this week
+        const weeklyRevenue = payments.reduce((sum, payment) => {
+          if (!payment.date_created) return sum;
+          const paymentDate = new Date(payment.date_created);
+          if (paymentDate >= weekStart && paymentDate <= weekEnd) {
+            return sum + parseFloat(payment.amount || 0);
+          }
+          return sum;
+        }, 0);
+        
+        revenueData.push(Math.round(weeklyRevenue));
       }
       
       setChartData({
         occupancyData,
         revenueData,
-        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7']
+        labels
       });
     }
-  }, [hostelInfo, tenants]);
+  }, [hostelInfo, tenants, payments]);
 
   const { occupancyData, revenueData, labels } = chartData;
 
@@ -246,11 +296,16 @@ const DashboardCharts = ({ hostelInfo }) => {
         <div className="charts-header">
           <div className="charts-title">
             <h3>Performance Trends</h3>
-            <p>No data available for charts</p>
+            <p>No historical data available yet</p>
           </div>
         </div>
         <div className="loading-container">
-          <div className="loading-spinner">Waiting for tenant data...</div>
+          <div className="loading-spinner">
+            {tenants.length === 0 && payments.length === 0 
+              ? "Waiting for tenant and payment data..." 
+              : "Calculating trends from available data..."
+            }
+          </div>
         </div>
       </div>
     );

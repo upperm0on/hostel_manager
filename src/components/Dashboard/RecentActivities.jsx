@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, UserPlus, CreditCard, Wrench, UserMinus, ArrowRight } from 'lucide-react';
+import { API_ENDPOINTS } from '../../config/api';
 import './DashboardComponents.css';
 
 const RecentActivities = () => {
@@ -18,7 +19,7 @@ const RecentActivities = () => {
           return;
         }
 
-        const response = await fetch('/hq/api/manager/tenants', {
+        const response = await fetch(API_ENDPOINTS.TENANTS_LIST, {
           method: 'GET',
           headers: {
             'Authorization': `Token ${token}`,

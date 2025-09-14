@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_ENDPOINTS } from '../../config/api';
 import { 
   Building, 
   Home, 
@@ -34,7 +35,7 @@ const HostelOverview = ({ hostelInfo }) => {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
-        const response = await fetch('/hq/api/manager/tenants', {
+        const response = await fetch(API_ENDPOINTS.TENANTS_LIST, {
           headers: {
             'Authorization': `Token ${token}`,
             'Content-Type': 'application/json',
@@ -320,24 +321,22 @@ const HostelOverview = ({ hostelInfo }) => {
       {/* Modern Hero Section */}
       <div className="hostel-hero-modern">
         <div className="hero-background-modern">
-          <div className="hero-pattern"></div>
-          <div className="hero-gradient"></div>
+          {hostelDetails?.logo ? (
+            <img 
+              src={hostelDetails.logo} 
+              alt="Hostel Cover" 
+              className="hero-cover-image"
+            />
+          ) : (
+            <>
+              <div className="hero-pattern"></div>
+              <div className="hero-gradient"></div>
+            </>
+          )}
+          <div className="hero-overlay"></div>
         </div>
         <div className="hero-content-modern">
           <div className="hero-main">
-            <div className="hero-logo-modern">
-              {hostelDetails?.logo ? (
-                <img 
-                  src={hostelDetails.logo.startsWith('http') ? hostelDetails.logo : hostelDetails.logo} 
-                  alt="Hostel Logo" 
-                  className="hero-logo-image-modern"
-                />
-              ) : (
-                <div className="hero-logo-placeholder-modern">
-                  <Building size={56} />
-                </div>
-              )}
-            </div>
             <div className="hero-info-modern">
               <h1 className="hero-title-modern">{hostelDetails?.name || 'Hostel Name'}</h1>
               <div className="hero-location-modern">
@@ -704,99 +703,6 @@ const HostelOverview = ({ hostelInfo }) => {
           )}
         </div>
         
-        <div className="content-sidebar">
-          {/* Modern Quick Actions */}
-          <div className="section-card-modern actions-modern">
-            <div className="section-header-modern">
-              <div className="section-title-modern">
-                <div className="section-icon-modern">
-                  <SettingsIcon size={24} />
-                </div>
-                <div className="section-text-modern">
-                  <h3>Quick Actions</h3>
-                  <p>Manage your hostel operations efficiently</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="actions-grid-modern">
-              <button 
-                className="action-card-modern primary"
-                onClick={() => window.location.href = '/tenants'}
-              >
-                <div className="action-icon-modern">
-                  <Users size={20} />
-                </div>
-                <div className="action-content-modern">
-                  <span className="action-title-modern">Manage Tenants</span>
-                  <span className="action-subtitle-modern">View and manage resident information</span>
-                </div>
-              </button>
-              
-              <button 
-                className="action-card-modern"
-                onClick={() => {
-                  const roomInfo = hostelInfo?.roomDetails || [];
-                  if (roomInfo.length > 0) {
-                    alert(`Room Information:\n\n${roomInfo.map(room => 
-                      `🏠 ${room.numberInRoom || 'Room'}: ${room.quantity || 0} beds, $${room.price || 0}/month`
-                    ).join('\n')}`);
-                  } else {
-                    alert('No room information available. Please add rooms in the Room Details tab.');
-                  }
-                }}
-              >
-                <div className="action-icon-modern">
-                  <Home size={20} />
-                </div>
-                <div className="action-content-modern">
-                  <span className="action-title-modern">View Rooms</span>
-                  <span className="action-subtitle-modern">Check room availability and details</span>
-                </div>
-              </button>
-              
-              <button 
-                className="action-card-modern"
-                onClick={() => window.location.href = '/analytics'}
-              >
-                <div className="action-icon-modern">
-                  <BarChart3 size={20} />
-                </div>
-                <div className="action-content-modern">
-                  <span className="action-title-modern">View Analytics</span>
-                  <span className="action-subtitle-modern">Detailed performance insights</span>
-                </div>
-              </button>
-              
-              <button 
-                className="action-card-modern"
-                onClick={() => {
-                  const analytics = {
-                    occupancy: `${occupancyRate}%`,
-                    revenue: `$${Math.round(totalRevenue).toLocaleString()}`,
-                    tenants: totalTenants.toString(),
-                    satisfaction: '4.2/5'
-                  };
-                  
-                  alert(`Quick Analytics Overview:\n\n` +
-                        `📊 Occupancy Rate: ${analytics.occupancy}\n` +
-                        `💰 Monthly Revenue: ${analytics.revenue}\n` +
-                        `👥 Total Tenants: ${analytics.tenants}\n` +
-                        `⭐ Tenant Satisfaction: ${analytics.satisfaction}`);
-                }}
-              >
-                <div className="action-icon-modern">
-                  <DollarSign size={20} />
-                </div>
-                <div className="action-content-modern">
-                  <span className="action-title-modern">Revenue Overview</span>
-                  <span className="action-subtitle-modern">Financial performance summary</span>
-                </div>
-              </button>
-            </div>
-          </div>
-
-        </div>
       </div>
     </div>
   );

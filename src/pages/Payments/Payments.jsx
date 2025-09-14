@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { DollarSign, Plus } from 'lucide-react';
 import { PaymentSummary, PaymentFilters, PaymentModal } from '../../components/PaymentComponents';
 import PaymentTable from '../../components/PaymentTable/PaymentTable';
+import BankingAlert from '../../components/Common/BankingAlert';
 import './Payments.css';
 
 const Payments = () => {
@@ -13,6 +14,10 @@ const Payments = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [editingPayment, setEditingPayment] = useState(null);
   const [modalMode, setModalMode] = useState('add');
+
+  const handleCompleteBanking = () => {
+    navigate('/settings?tab=banking');
+  };
 
   // Mock data for demonstration
   const mockTenants = [
@@ -242,6 +247,7 @@ const Payments = () => {
 
   return (
     <div className="payments-page">
+      <BankingAlert onComplete={handleCompleteBanking} />
       <div className="page-header">
         <div className="page-header-content">
           <div>

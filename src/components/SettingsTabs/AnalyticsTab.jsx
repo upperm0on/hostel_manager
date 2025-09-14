@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_ENDPOINTS } from '../../config/api';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -41,7 +42,7 @@ const AnalyticsTab = ({ hostelInfo, onSave }) => {
           return;
         }
 
-        const response = await fetch('/hq/api/manager/tenants', {
+        const response = await fetch(API_ENDPOINTS.TENANTS_LIST, {
           method: 'GET',
           headers: {
             'Authorization': `Token ${token}`,
@@ -418,107 +419,6 @@ const AnalyticsTab = ({ hostelInfo, onSave }) => {
 
       </div>
 
-      {/* Quick Actions */}
-      <div className="quick-actions">
-        <h3 className="actions-title">Quick Actions</h3>
-        <div className="actions-grid">
-          <button 
-            className="action-card"
-            onClick={() => {
-              const reportData = {
-                month: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-                occupancy: '87%',
-                revenue: '$45,600',
-                tenants: 156
-              };
-              const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `monthly-report-${new Date().toISOString().slice(0, 7)}.json`;
-              a.click();
-              URL.revokeObjectURL(url);
-            }}
-          >
-            <BarChart3 size={24} />
-            <span>Generate Monthly Report</span>
-          </button>
-          
-          <button 
-            className="action-card"
-            onClick={() => {
-              const trendsData = {
-                period: selectedPeriod,
-                occupancy: {
-                  trend: 'up',
-                  change: '+5%',
-                  forecast: '90% by next period'
-                },
-                revenue: {
-                  trend: 'up',
-                  change: '+7.8%',
-                  forecast: '$49,200 by next period'
-                }
-              };
-              const blob = new Blob([JSON.stringify(trendsData, null, 2)], { type: 'application/json' });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `performance-trends-${selectedPeriod}.json`;
-              a.click();
-              URL.revokeObjectURL(url);
-            }}
-          >
-            <TrendingUp size={24} />
-            <span>View Performance Trends</span>
-          </button>
-          
-          <button 
-            className="action-card"
-            onClick={() => {
-              const tenantData = {
-                total: analyticsData.tenants.total,
-                active: analyticsData.tenants.active,
-                new: analyticsData.tenants.new,
-                satisfaction: analyticsData.tenants.satisfaction,
-                retention: Math.round(((analyticsData.tenants.total - analyticsData.tenants.leaving) / analyticsData.tenants.total) * 100)
-              };
-              const blob = new Blob([JSON.stringify(tenantData, null, 2)], { type: 'application/json' });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `tenant-analytics-${selectedPeriod}.json`;
-              a.click();
-              URL.revokeObjectURL(url);
-            }}
-          >
-            <Users size={24} />
-            <span>Tenant Analytics</span>
-          </button>
-          
-          <button 
-            className="action-card"
-            onClick={() => {
-              const financialData = {
-                revenue: analyticsData.revenue.current,
-                breakdown: analyticsData.revenue.breakdown,
-                payments: analyticsData.payments,
-                period: selectedPeriod
-              };
-              const blob = new Blob([JSON.stringify(financialData, null, 2)], { type: 'application/json' });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `financial-summary-${selectedPeriod}.json`;
-              a.click();
-              URL.revokeObjectURL(url);
-            }}
-          >
-            <DollarSign size={24} />
-            <span>Financial Summary</span>
-          </button>
-        </div>
-      </div>
 
       {/* Modals */}
       {/* Occupancy Details Modal */}

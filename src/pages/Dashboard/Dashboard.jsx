@@ -12,6 +12,7 @@ import {
   DashboardAnalytics,
   DashboardCharts
 } from '../../components/Dashboard';
+import BankingAlert from '../../components/Common/BankingAlert';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -22,6 +23,10 @@ const Dashboard = () => {
 
   const handleSetupHostel = () => {
     navigate('/settings');
+  };
+
+  const handleCompleteBanking = () => {
+    navigate('/settings?tab=banking');
   };
 
   // If no hostel exists, show setup message
@@ -49,6 +54,7 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard">
+      <BankingAlert onComplete={handleCompleteBanking} />
       <DashboardHeader hostelInfo={hostelInfo} />
 
       {/* Dashboard Analytics Component */}
