@@ -129,71 +129,71 @@
 
 @media (max-width: 500px) {
   .content-container {
-    padding: 2%;
+    padding: 1.5%;
   }
   
   .content-container-modern {
-    padding: 2%;
+    padding: 1.5%;
   }
   
   .auth-content-modern {
-    padding: 2%;
+    padding: 1.5%;
   }
 }
 
 @media (max-width: 480px) {
   .content-container {
-    padding: 1.5%;
+    padding: 1%;
   }
   
   .content-container-modern {
-    padding: 1.5%;
+    padding: 1%;
   }
   
   .auth-content-modern {
-    padding: 1.5%;
+    padding: 1%;
   }
 }
 
 @media (max-width: 400px) {
   .content-container {
-    padding: 1%;
+    padding: 0.8%;
   }
   
   .content-container-modern {
-    padding: 1%;
+    padding: 0.8%;
   }
   
   .auth-content-modern {
-    padding: 1%;
+    padding: 0.8%;
   }
 }
 
 @media (max-width: 360px) {
   .content-container {
-    padding: 0.8%;
+    padding: 0.5%;
   }
   
   .content-container-modern {
-    padding: 0.8%;
+    padding: 0.5%;
   }
   
   .auth-content-modern {
-    padding: 0.8%;
+    padding: 0.5%;
   }
 }
 
 @media (max-width: 320px) {
   .content-container {
-    padding: 0.5%;
+    padding: 0.3%;
   }
   
   .content-container-modern {
-    padding: 0.5%;
+    padding: 0.3%;
   }
   
   .auth-content-modern {
-    padding: 0.5%;
+    padding: 0.3%;
   }
 }
 
@@ -255,31 +255,31 @@
 /* Responsive modern app padding for small screens */
 @media (max-width: 500px) {
   .app-modern {
-    padding: 0 2%;
+    padding: 0 1%;
   }
 }
 
 @media (max-width: 480px) {
   .app-modern {
-    padding: 0 1.5%;
+    padding: 0 0.8%;
   }
 }
 
 @media (max-width: 400px) {
   .app-modern {
-    padding: 0 1%;
+    padding: 0 0.5%;
   }
 }
 
 @media (max-width: 360px) {
   .app-modern {
-    padding: 0 0.8%;
+    padding: 0 0.3%;
   }
 }
 
 @media (max-width: 320px) {
   .app-modern {
-    padding: 0 0.5%;
+    padding: 0 0.2%;
   }
 }
 
@@ -332,36 +332,36 @@
 /* Responsive modern main content padding for small screens */
 @media (max-width: 500px) {
   .main-content-modern {
-    padding: 0 2%;
+    padding: 0 1%;
   }
 }
 
 @media (max-width: 480px) {
   .main-content-modern {
-    padding: 0 1.5%;
+    padding: 0 0.8%;
   }
 }
 
 @media (max-width: 400px) {
   .main-content-modern {
-    padding: 0 1%;
+    padding: 0 0.5%;
   }
 }
 
 @media (max-width: 360px) {
   .main-content-modern {
-    padding: 0 0.8%;
+    padding: 0 0.3%;
   }
 }
 
 @media (max-width: 320px) {
   .main-content-modern {
-    padding: 0 0.5%;
+    padding: 0 0.2%;
   }
 }
 
 .content-container-modern {
-  padding: 32px;
+  padding: 2%;
   max-width: 1400px;
   margin: 0 auto;
   position: relative;
@@ -480,7 +480,7 @@
   }
   
   .content-container-modern {
-    padding: 20px;
+    padding: 1.5%;
   }
   
   .auth-content-modern {

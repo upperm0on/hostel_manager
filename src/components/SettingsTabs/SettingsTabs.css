@@ -78,7 +78,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px 24px 20px 24px;
+  padding: 2%;
   border-bottom: 1px solid var(--border);
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 }
@@ -173,14 +173,14 @@
 
 /* Collapsible Form Styles */
 .room-form-collapsible {
-  padding: 24px;
+  padding: 2%;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
 
 .room-form-collapsible.collapsed {
   max-height: 0;
-  padding: 0 24px;
+  padding: 0 2%;
   opacity: 0;
 }
 
@@ -1975,7 +1975,7 @@
   }
   
   .room-card-enhanced {
-    padding: 24px;
+    padding: 2%;
   }
   
   .room-form-grid-enhanced {
@@ -2031,8 +2031,20 @@
 
 @media (max-width: 480px) {
   .room-card-enhanced {
-    padding: 20px;
+    padding: 1.5%;
     border-radius: 16px;
+  }
+  
+  .room-card-header {
+    padding: 1.5%;
+  }
+  
+  .room-form-collapsible {
+    padding: 1.5%;
+  }
+  
+  .room-form-collapsible.collapsed {
+    padding: 0 1.5%;
   }
   
   .form-input-enhanced {
@@ -3222,14 +3234,25 @@
 
 @media (max-width: 360px) {
   /* Room Configuration Ultra Small Mobile Styles */
-  .rooms-grid-interactive {
-    gap: 8px;
-    margin-bottom: 12px;
+  .room-card-enhanced {
+    padding: 1%;
   }
   
   .room-card-header {
-    padding: 8px;
-    gap: 6px;
+    padding: 1%;
+  }
+  
+  .room-form-collapsible {
+    padding: 1%;
+  }
+  
+  .room-form-collapsible.collapsed {
+    padding: 0 1%;
+  }
+  
+  .rooms-grid-interactive {
+    gap: 8px;
+    margin-bottom: 12px;
   }
   
   .room-quick-stats {
