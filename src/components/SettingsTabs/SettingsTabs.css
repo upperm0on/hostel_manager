@@ -2125,6 +2125,30 @@
   position: relative;
 }
 
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+/* Allocation Status Indicator */
+.allocation-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.allocation-status.valid {
+  background-color: var(--success-light);
+  color: var(--success);
+}
+
+.allocation-status.invalid {
+  background-color: var(--error-light);
+  color: var(--error);
+}
+
 .form-label {
   display: flex;
   align-items: center;
@@ -2207,6 +2231,25 @@
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.validation-error {
+  font-size: 0.75rem;
+  color: var(--error);
+  font-weight: 500;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.validation-error.tenant-warning {
+  color: var(--warning);
+  background: var(--warning-light);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--warning);
+  margin-top: 8px;
 }
 
 .form-success {

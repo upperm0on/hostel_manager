@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings as SettingsIcon, CreditCard } from 'lucide-react';
+import { Settings as SettingsIcon, CreditCard, Home } from 'lucide-react';
 import './SettingsTabsNavigation.css';
 
 const SettingsTabsNavigation = ({ activeTab, onTabChange }) => {
@@ -8,6 +8,11 @@ const SettingsTabsNavigation = ({ activeTab, onTabChange }) => {
       id: 'hostel',
       label: 'Hostel Settings',
       icon: SettingsIcon
+    },
+    {
+      id: 'rooms',
+      label: 'Room Occupancy',
+      icon: Home
     },
     {
       id: 'banking',

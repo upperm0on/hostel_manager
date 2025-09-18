@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, UserPlus, CreditCard, Wrench, UserMinus, ArrowRight } from 'lucide-react';
 import { API_ENDPOINTS } from '../../config/api';
+import { getRoomTypeName } from '../../utils/roomUtils';
+import { useHostel } from '../../contexts/HostelContext';
 import './DashboardComponents.css';
 
 const RecentActivities = () => {
+  const { hostelInfo } = useHostel();
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -44,7 +47,10 @@ const RecentActivities = () => {
               tenant: tenant.user?.username || 'Unknown',
               amount: tenant.amount,
               time: getTimeAgo(new Date(tenant.date_created)),
-              date: tenant.date_created
+              date: tenant.date_created,
+              room: tenant.room_uuid,
+              roomTypeName: getRoomTypeName(tenant.room_uuid, hostelInfo),
+              reference: tenant.reference
             }));
           
           setActivities(recentActivities);
@@ -89,7 +95,7 @@ const RecentActivities = () => {
   const getActivityText = (activity) => {
     switch (activity.type) {
       case 'checkin':
-        return `${activity.tenant} checked in`;
+        return `${activity.tenant} checked in to ${activity.roomTypeName}`;
       case 'payment':
         return `${activity.tenant} made a payment of $${activity.amount}`;
       case 'maintenance':

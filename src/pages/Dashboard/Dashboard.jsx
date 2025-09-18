@@ -57,7 +57,7 @@ const Dashboard = () => {
       <BankingAlert onComplete={handleCompleteBanking} />
       <DashboardHeader hostelInfo={hostelInfo} />
 
-      {/* Dashboard Analytics Component */}
+      {/* Dashboard Analytics Component (includes StatsGrid) */}
       <DashboardAnalytics hostelInfo={hostelInfo} />
 
       {/* Dashboard Charts Component */}

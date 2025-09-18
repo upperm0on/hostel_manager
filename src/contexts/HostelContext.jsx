@@ -74,29 +74,67 @@ export const HostelProvider = ({ children }) => {
     initializeHostelData();
   }, [isAuthenticated]); // Re-run when authentication state changes
 
-  // Helper function to transform frontend data to backend format
-  const transformToBackendFormat = (hostelData) => {
+  // Helper function to transform data to backend format
+  const transformToBackendFormat = (data) => {
+    // New path: data already in backend shape coming from Settings submit
+    if (data && typeof data.name === 'string') {
+      const additional = Array.isArray(data.additional_details)
+        ? JSON.stringify(data.additional_details)
+        : (typeof data.additional_details === 'string' ? data.additional_details : '[]');
+
+      const normalizedRooms = Array.isArray(data.room_details)
+        ? data.room_details.map((room) => {
+            // Ensure amenities is a JSON string as backend expects
+            const amenities = Array.isArray(room.amenities)
+              ? JSON.stringify(room.amenities)
+              : (typeof room.amenities === 'string' ? room.amenities : '[]');
+            return {
+              number_in_room: room.number_in_room ?? 0,
+              number_of_rooms: room.number_of_rooms ?? 0,
+              price: room.price ?? '0',
+              gender: {
+                male: room.gender?.male ?? 0,
+                female: room.gender?.female ?? 0,
+              },
+              amenities,
+              room_image: room.room_image ?? null,
+              room_label: room.room_label ?? '',
+            };
+          })
+        : [];
+
+      const backendData = {
+        name: data.name || '',
+        campus: typeof data.campus === 'string' ? data.campus : (data.campus?.campus || ''),
+        additional_details: additional,
+        room_details: normalizedRooms,
+        image: data.image || null,
+      };
+      return backendData;
+    }
+
+    // Legacy path: transform from old form state shape
+    const hostelData = data || {};
     return {
       name: hostelData.hostelDetails?.name || '',
-      campus: hostelData.hostelDetails?.location || '', // Send campus as string, not object
+      campus: hostelData.hostelDetails?.location || '',
       additional_details: JSON.stringify(
         hostelData.generalAmenities?.map(item => item.value) || []
       ),
-      room_details: JSON.stringify(
-        hostelData.roomDetails?.map(room => ({
-          number_in_room: room.numberInRoom || '',
-          number_of_rooms: room.quantity || '',
-          price: room.price || '',
-          gender: {
-            male: room.maleRooms || '',
-            female: room.femaleRooms || ''
-          },
-          amenities: JSON.stringify(
-            room.amenities?.map(amenity => amenity.value) || []
-          ),
-          room_image: room.roomImage || null
-        })) || []
-      ),
+      room_details: (hostelData.roomDetails || []).map(room => ({
+        number_in_room: room.number_in_room || 0,
+        number_of_rooms: room.number_of_rooms || 0,
+        price: room.price || '0',
+        gender: {
+          male: room.male_rooms || 0,
+          female: room.female_rooms || 0
+        },
+        amenities: JSON.stringify(
+          (room.amenities || []).map(amenity => amenity.value)
+        ),
+        room_image: room.room_image || null,
+        room_label: room.room_label || ''
+      })),
       image: hostelData.hostelDetails?.logo || null
     };
   };

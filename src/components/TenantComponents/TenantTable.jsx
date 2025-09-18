@@ -1,10 +1,22 @@
 import React, { useState } from 'react';
 import { Users } from 'lucide-react';
+import { getRoomTypeName } from '../../utils/roomUtils';
+import { useHostel } from '../../contexts/HostelContext';
 import './TenantComponents.css';
 
 const TenantTable = ({ tenants }) => {
+  const { hostelInfo } = useHostel();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+
+  // Debug hostel info
+  console.log('TenantTable - HostelInfo:', hostelInfo);
+  console.log('TenantTable - Room details:', hostelInfo?.room_details);
+  
+  // If hostel info is not loaded yet, show loading state
+  if (!hostelInfo) {
+    console.log('TenantTable - Hostel info not loaded yet');
+  }
   const getStatusClass = (status) => {
     switch (status) {
       case 'active':
@@ -108,7 +120,24 @@ const TenantTable = ({ tenants }) => {
                   <div className="contact-phone">{tenant.phone}</div>
                 </div>
               </td>
-              <td className="tenant-room">{tenant.room}</td>
+              <td className="tenant-room">
+                {(() => {
+                  const roomUuid = tenant.roomUuid || tenant.room;
+                  
+                  // Match tenant's room_uuid with hostel room's uuid field
+                  if (hostelInfo && hostelInfo.room_details && Array.isArray(hostelInfo.room_details)) {
+                    for (let room of hostelInfo.room_details) {
+                      if (room.uuid === roomUuid) {
+                        // Use room_label if available, otherwise fall back to number_in_room format
+                        return room.room_label || `${room.number_in_room}-Person Room`;
+                      }
+                    }
+                  }
+                  
+                  // If no match, return the UUID
+                  return roomUuid;
+                })()}
+              </td>
               <td className="tenant-checkin">{tenant.checkInDate}</td>
               <td>
                 <div className={`tenant-status ${getStatusClass(tenant.status)}`}>

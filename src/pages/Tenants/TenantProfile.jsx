@@ -12,10 +12,13 @@ import {
   DollarSign
 } from 'lucide-react';
 import { API_ENDPOINTS } from '../../config/api';
+import { getRoomTypeName } from '../../utils/roomUtils';
+import { useHostel } from '../../contexts/HostelContext';
 import './TenantProfile.css';
 
 const TenantProfile = () => {
   const { id } = useParams();
+  const { hostelInfo } = useHostel();
   const [tenant, setTenant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -58,10 +61,13 @@ const TenantProfile = () => {
               name: foundTenant.user?.username || 'Unknown',
               email: foundTenant.user?.email || 'No email',
               phone: foundTenant.user?.phone || 'No phone',
-              room: `${foundTenant.room_id} in room`,
-              status: 'active', // Default status
+              room: foundTenant.room_uuid || 'No room assigned',
+              roomUuid: foundTenant.room_uuid,
+              status: foundTenant.is_active ? 'active' : 'inactive',
               moveInDate: foundTenant.date_created ? new Date(foundTenant.date_created).toISOString().split('T')[0] : 'Unknown',
               rentAmount: foundTenant.amount || 0,
+              reference: foundTenant.reference,
+              hostel: foundTenant.hostel,
               emergencyContact: 'Not provided', // API doesn't provide this
               emergencyPhone: 'Not provided', // API doesn't provide this
               paymentHistory: [
@@ -71,7 +77,8 @@ const TenantProfile = () => {
                   month: foundTenant.date_created ? new Date(foundTenant.date_created).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Unknown',
                   amount: foundTenant.amount || 0,
                   status: 'paid',
-                  date: foundTenant.date_created ? new Date(foundTenant.date_created).toISOString().split('T')[0] : 'Unknown'
+                  date: foundTenant.date_created ? new Date(foundTenant.date_created).toISOString().split('T')[0] : 'Unknown',
+                  reference: foundTenant.reference
                 }
               ],
               hostelHistory: [
@@ -208,7 +215,9 @@ const TenantProfile = () => {
         <div className="profile-header-details">
           <div className="profile-header-detail">
             <div className="profile-header-detail-label">Room</div>
-            <div className="profile-header-detail-value">{tenant.room}</div>
+            <div className="profile-header-detail-value">
+              {getRoomTypeName(tenant.roomUuid || tenant.room, hostelInfo)}
+            </div>
           </div>
           <div className="profile-header-detail">
             <div className="profile-header-detail-label">Rent</div>
@@ -313,7 +322,9 @@ const TenantProfile = () => {
               </div>
               <div className="profile-hostel-history-details">
                 <div className="profile-hostel-history-name">{history.hostelName}</div>
-                <div className="profile-hostel-history-location">Room {history.room}</div>
+                <div className="profile-hostel-history-location">
+                  {getRoomTypeName(tenant.roomUuid || tenant.room, hostelInfo)}
+                </div>
                 <div className="profile-hostel-history-period">{history.period}</div>
               </div>
               <span className="profile-hostel-history-status">{history.status}</span>

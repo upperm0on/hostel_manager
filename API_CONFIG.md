@@ -4,8 +4,8 @@
 All API endpoints are centralized in `/src/config/api.js` for easy management and deployment.
 
 ## Current Configuration
-- **All Environments**: Uses relative paths (e.g., `/hq/api/login/`)
-- **Deployment**: No configuration needed - works with any domain
+- **All Environments**: Uses relative paths starting with `/hq/api/`
+- **All Endpoints**: Prefixed with `/hq/api/` for deployment flexibility
 
 ## Available Endpoints
 
@@ -36,16 +36,16 @@ All API endpoints are centralized in `/src/config/api.js` for easy management an
 ## How API URLs Work
 
 ### Relative Paths
-All API endpoints now use relative paths (e.g., `/hq/api/login/`). This means:
-- ✅ **No configuration needed** for different environments
-- ✅ **Works automatically** with any domain (localhost, staging, production)
-- ✅ **Simpler deployment** - just deploy and it works
-- ✅ **No hardcoded URLs** in the codebase
+All API endpoints now use relative paths starting with `/hq/api/`. This means:
+- ✅ **Deployment flexible** - works with any domain automatically
+- ✅ **No hardcoded URLs** - adapts to current domain
+- ✅ **Production ready** - same code works in all environments
+- ✅ **Proxy friendly** - works with reverse proxies and load balancers
 
 ### Examples
-- Development: `http://localhost:3000/hq/api/login/`
-- Staging: `https://staging.yourhostel.com/hq/api/login/`
-- Production: `https://yourhostel.com/hq/api/login/`
+- Login: `/hq/api/login/`
+- Tenants: `/hq/api/manager/tenants`
+- Hostel: `/hq/api/manager/hostel/`
 
 ## Files Updated
 The following files now use the centralized API configuration:
@@ -62,13 +62,14 @@ The following files now use the centralized API configuration:
 - 🔧 **Maintainable** - No more hunting for hardcoded URLs
 - 📝 **Documented** - Clear list of all available endpoints
 - 🌐 **Environment Agnostic** - Same code works everywhere
+- 🔄 **Proxy Compatible** - Works with reverse proxies and load balancers
 
 ## Production Deployment
 1. Deploy your frontend to any domain
 2. Ensure your backend API is available at the same domain
 3. That's it! No configuration needed
-2. Build your React app: `npm run build`
-3. Deploy the built files to your hosting service
+4. Build your React app: `npm run build`
+5. Deploy the built files to your hosting service
 
 ## Example URLs by Environment
 ```javascript
@@ -78,4 +79,24 @@ The following files now use the centralized API configuration:
 // Production: https://yourhostel.com/hq/api/login/
 
 // No configuration needed - works automatically!
+```
+
+## Development Setup
+For local development, you may need to configure a proxy in your Vite config:
+
+```javascript
+// vite.config.js
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 3000,
+    proxy: {
+      '/hq/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false
+      }
+    }
+  }
+})
 ```

@@ -59,16 +59,21 @@ const Tenants = () => {
             name: tenant.user?.username || "Unknown",
             email: tenant.user?.email || "No email",
             phone: tenant.user?.phone || "No phone",
-            room: `${tenant.room_id} in room`,
+            room: tenant.room_uuid || "No room assigned",
+            roomUuid: tenant.room_uuid,
             checkInDate: tenant.date_created
               ? new Date(tenant.date_created).toISOString().split("T")[0]
               : "Unknown",
-            status: "active", // Default status since API doesn't provide this
+            status: tenant.is_active ? "active" : "inactive",
             rentAmount: tenant.amount || 0,
+            reference: tenant.reference,
+            hostel: tenant.hostel,
             // Keep original API data for reference
             originalData: tenant,
           }));
 
+          console.log('Tenants Debug - Transformed tenants:', transformedTenants);
+          console.log('Tenants Debug - Hostel info:', hostelInfo);
           setTenants(transformedTenants);
         }
       } catch (error) {

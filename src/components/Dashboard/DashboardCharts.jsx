@@ -57,7 +57,7 @@ const DashboardCharts = ({ hostelInfo }) => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem('Token');
+        const token = localStorage.getItem('token');
         
         if (!token) {
           console.log('No authentication token found');
@@ -76,7 +76,25 @@ const DashboardCharts = ({ hostelInfo }) => {
         if (tenantsResponse.ok) {
           const tenantsData = await tenantsResponse.json();
           if (tenantsData.status === 'success' && tenantsData.tenants) {
-            setTenants(tenantsData.tenants);
+            // Transform API data to match frontend expected format
+            const transformedTenants = tenantsData.tenants.map((tenant) => ({
+              id: tenant.id,
+              name: tenant.user?.username || "Unknown",
+              email: tenant.user?.email || "No email",
+              phone: tenant.user?.phone || "No phone",
+              room: tenant.room_uuid || "No room assigned",
+              roomUuid: tenant.room_uuid,
+              checkInDate: tenant.date_created
+                ? new Date(tenant.date_created).toISOString().split("T")[0]
+                : "Unknown",
+              status: tenant.is_active ? "active" : "inactive",
+              rentAmount: tenant.amount || 0,
+              reference: tenant.reference,
+              hostel: tenant.hostel,
+              // Keep original API data for reference
+              originalData: tenant,
+            }));
+            setTenants(transformedTenants);
           }
         }
 
@@ -113,26 +131,48 @@ const DashboardCharts = ({ hostelInfo }) => {
       const roomDetails = hostelInfo.room_details || [];
       const totalCapacity = roomDetails.reduce((sum, room) => sum + (parseInt(room.number_of_rooms) * parseInt(room.number_in_room) || 0), 0);
       
-      // Calculate current occupancy
+      // Calculate current occupancy based on unique room_uuid values
       const currentTenants = tenants.length;
-      const currentOccupancy = totalCapacity > 0 ? Math.round((currentTenants / totalCapacity) * 100) : 0;
       
-      // Calculate real revenue from payments data
-      const currentRevenue = payments.reduce((sum, payment) => {
-        return sum + parseFloat(payment.amount || 0);
-      }, 0);
+      
+      const occupiedRooms = new Set(tenants.map(tenant => {
+        return tenant.roomUuid || tenant.room_uuid || tenant.originalData?.room_uuid;
+      }).filter(Boolean)).size;
+      const currentOccupancy = totalCapacity > 0 ? Math.round((occupiedRooms / totalCapacity) * 100) : 0;
+      
+      // Calculate real revenue from payments data, or use tenant data as fallback
+      let currentRevenue = 0;
+      
+      if (payments.length > 0) {
+        currentRevenue = payments.reduce((sum, payment) => {
+          return sum + parseFloat(payment.amount || 0);
+        }, 0);
+      } else {
+        // Fallback to tenant data
+        currentRevenue = tenants.reduce((sum, tenant) => {
+          const amount = tenant.rentAmount || tenant.amount || tenant.originalData?.amount || 0;
+          return sum + parseFloat(amount);
+        }, 0);
+      }
       
       // Generate weekly trend data based on real data
       const occupancyData = [];
       const revenueData = [];
       const labels = [];
       
-      // Create weekly labels for the last 7 weeks
+      // Create weekly labels for the last 7 weeks with actual dates
       const today = new Date();
       for (let i = 6; i >= 0; i--) {
         const weekDate = new Date(today);
         weekDate.setDate(today.getDate() - (i * 7));
-        labels.push(`Week ${7 - i}`);
+        const weekStart = new Date(weekDate);
+        weekStart.setDate(weekDate.getDate() - 6);
+        
+        const formatDate = (date) => {
+          return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        };
+        
+        labels.push(`${formatDate(weekStart)} - ${formatDate(weekDate)}`);
       }
       
       // Calculate weekly occupancy based on tenant creation dates
@@ -142,14 +182,18 @@ const DashboardCharts = ({ hostelInfo }) => {
         const weekEnd = new Date(today);
         weekEnd.setDate(today.getDate() - (i * 7));
         
-        // Count tenants who moved in before or during this week
+        // Count unique rooms occupied by tenants who moved in before or during this week
         const tenantsInWeek = tenants.filter(tenant => {
-          if (!tenant.date_created) return false;
-          const moveInDate = new Date(tenant.date_created);
+          const checkInDate = tenant.checkInDate || tenant.date_created || tenant.originalData?.date_created;
+          if (!checkInDate) return false;
+          const moveInDate = new Date(checkInDate);
           return moveInDate <= weekEnd;
-        }).length;
+        });
         
-        const weeklyOccupancy = totalCapacity > 0 ? Math.round((tenantsInWeek / totalCapacity) * 100) : 0;
+        const occupiedRoomsInWeek = new Set(tenantsInWeek.map(tenant => {
+          return tenant.roomUuid || tenant.room_uuid || tenant.originalData?.room_uuid;
+        }).filter(Boolean)).size;
+        const weeklyOccupancy = totalCapacity > 0 ? Math.round((occupiedRoomsInWeek / totalCapacity) * 100) : 0;
         occupancyData.push(weeklyOccupancy);
       }
       
@@ -160,19 +204,49 @@ const DashboardCharts = ({ hostelInfo }) => {
         const weekEnd = new Date(today);
         weekEnd.setDate(today.getDate() - (i * 7));
         
-        // Sum payments made during this week
-        const weeklyRevenue = payments.reduce((sum, payment) => {
-          if (!payment.date_created) return sum;
-          const paymentDate = new Date(payment.date_created);
-          if (paymentDate >= weekStart && paymentDate <= weekEnd) {
-            return sum + parseFloat(payment.amount || 0);
-          }
-          return sum;
-        }, 0);
+        // Sum payments made during this week, or use tenant data as fallback
+        let weeklyRevenue = 0;
+        
+        if (payments.length > 0) {
+          // Use payments data if available
+          weeklyRevenue = payments.reduce((sum, payment) => {
+            if (!payment.date_created) return sum;
+            const paymentDate = new Date(payment.date_created);
+            if (paymentDate >= weekStart && paymentDate <= weekEnd) {
+              return sum + parseFloat(payment.amount || 0);
+            }
+            return sum;
+          }, 0);
+        } else {
+          // Fallback to tenant data - estimate revenue based on tenants who moved in during this week
+          const tenantsInWeek = tenants.filter(tenant => {
+            const checkInDate = tenant.checkInDate || tenant.date_created || tenant.originalData?.date_created;
+            if (!checkInDate) return false;
+            const moveInDate = new Date(checkInDate);
+            return moveInDate >= weekStart && moveInDate <= weekEnd;
+          });
+          
+          weeklyRevenue = tenantsInWeek.reduce((sum, tenant) => {
+            const amount = tenant.rentAmount || tenant.amount || tenant.originalData?.amount || 0;
+            return sum + parseFloat(amount);
+          }, 0);
+        }
         
         revenueData.push(Math.round(weeklyRevenue));
       }
       
+      console.log('DashboardCharts - Calculated data:', {
+        tenants: tenants.length,
+        payments: payments.length,
+        totalCapacity,
+        occupiedRooms,
+        currentOccupancy,
+        currentRevenue,
+        occupancyData,
+        revenueData,
+        labels
+      });
+
       setChartData({
         occupancyData,
         revenueData,
@@ -257,7 +331,7 @@ const DashboardCharts = ({ hostelInfo }) => {
     labels: labels || [],
     datasets: [
       {
-        label: 'Revenue ($)',
+        label: 'Revenue (₵)',
         data: revenueData || [],
         backgroundColor: 'rgba(34, 197, 94, 0.1)',
         borderColor: 'rgba(34, 197, 94, 1)',

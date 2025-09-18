@@ -9,16 +9,21 @@ import {
   DollarSign,
   FileText,
   Save,
-  UserPlus
+  UserPlus,
+  AlertCircle,
+  CheckCircle,
+  Loader2
 } from 'lucide-react';
 import './TenantModal.css';
+import { validateEmailRealTime, sanitizeEmail } from '../../utils/emailValidation';
 
 const TenantModal = ({ 
   isOpen, 
   onClose, 
   tenant = null, 
   onSave, 
-  mode = 'add' 
+  mode = 'add',
+  existingTenants = [] // Array of existing tenants for email uniqueness check
 }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -41,6 +46,11 @@ const TenantModal = ({
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [emailValidation, setEmailValidation] = useState({
+    isValid: false,
+    isChecking: false,
+    error: ''
+  });
 
   // Initialize form with tenant data if editing
   useEffect(() => {
@@ -74,6 +84,42 @@ const TenantModal = ({
     }
   };
 
+  // Email validation with debouncing
+  const validateEmailField = async (email) => {
+    if (!email || email.trim() === '') {
+      setEmailValidation({ isValid: false, isChecking: false, error: '' });
+      return;
+    }
+
+    setEmailValidation(prev => ({ ...prev, isChecking: true }));
+    
+    try {
+      const result = await validateEmailRealTime(
+        email, 
+        existingTenants, 
+        mode === 'edit' ? tenant?.id : null
+      );
+      setEmailValidation(result);
+    } catch (error) {
+      setEmailValidation({ 
+        isValid: false, 
+        isChecking: false, 
+        error: 'Error validating email' 
+      });
+    }
+  };
+
+  // Debounced email validation
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (formData.email) {
+        validateEmailField(formData.email);
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [formData.email, existingTenants, tenant?.id, mode]);
+
   const handleEmergencyContactChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
@@ -91,10 +137,11 @@ const TenantModal = ({
       newErrors.name = 'Name is required';
     }
 
+    // Email validation - use the real-time validation result
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
+    } else if (!emailValidation.isValid) {
+      newErrors.email = emailValidation.error || 'Email is invalid';
     }
 
     if (!formData.phone.trim()) {
@@ -210,15 +257,23 @@ const TenantModal = ({
 
                 <div className="form-group">
                   <label className="form-label">Email Address *</label>
-                  <input
-                    type="email"
-                    className={`form-input ${errors.email ? 'error' : ''}`}
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    placeholder="Enter email address"
-                    disabled={isSubmitting}
-                  />
+                  <div className="email-input-container">
+                    <input
+                      type="email"
+                      className={`form-input ${errors.email ? 'error' : ''} ${emailValidation.isValid ? 'valid' : ''}`}
+                      value={formData.email}
+                      onChange={(e) => handleInputChange('email', sanitizeEmail(e.target.value))}
+                      placeholder="Enter email address"
+                      disabled={isSubmitting}
+                    />
+                    <div className="email-validation-icon">
+                      {emailValidation.isChecking && <Loader2 size={16} className="spinning" />}
+                      {!emailValidation.isChecking && emailValidation.isValid && <CheckCircle size={16} className="valid-icon" />}
+                      {!emailValidation.isChecking && !emailValidation.isValid && formData.email && <AlertCircle size={16} className="invalid-icon" />}
+                    </div>
+                  </div>
                   {errors.email && <span className="error-message">{errors.email}</span>}
+                  {!errors.email && emailValidation.error && <span className="error-message">{emailValidation.error}</span>}
                 </div>
 
                 <div className="form-group">

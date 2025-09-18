@@ -103,7 +103,6 @@ const HostelDetailsTab = ({
                 placeholder="Enter hostel name"
                 value={hostelDetails.name}
                 onChange={(e) => onHostelDetailsChange('name', e.target.value)}
-                required
               />
             </div>
             <SearchableSelect
@@ -114,7 +113,6 @@ const HostelDetailsTab = ({
               options={campusOptions}
               onSearch={handleCampusSearch}
               loading={loading}
-              required
             />
           </div>
 
@@ -178,11 +176,7 @@ const HostelDetailsTab = ({
                 }}
               />
             </div>
-            {!hostelDetails.logo && (
-              <div className="cover-image-upload-error">
-                <span>⚠️ Hostel cover image is required</span>
-              </div>
-            )}
+            {/* Image is optional; no blocking requirement */}
             <p className="form-help">Recommended size: 1200x400px, Max: 5MB</p>
           </div>
         </div>

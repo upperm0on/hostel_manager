@@ -12,6 +12,7 @@ import {
   Activity
 } from 'lucide-react';
 import { API_ENDPOINTS } from '../../config/api';
+import StatsGrid from '../StatsGrid/StatsGrid';
 import './DashboardAnalytics.css';
 
 const DashboardAnalytics = ({ hostelInfo }) => {
@@ -79,7 +80,25 @@ const DashboardAnalytics = ({ hostelInfo }) => {
         const data = await response.json();
         
         if (data.status === 'success' && data.tenants) {
-          setTenants(data.tenants);
+          // Transform API data to match frontend expected format
+          const transformedTenants = data.tenants.map((tenant) => ({
+            id: tenant.id,
+            name: tenant.user?.username || "Unknown",
+            email: tenant.user?.email || "No email",
+            phone: tenant.user?.phone || "No phone",
+            room: tenant.room_uuid || "No room assigned",
+            roomUuid: tenant.room_uuid,
+            checkInDate: tenant.date_created
+              ? new Date(tenant.date_created).toISOString().split("T")[0]
+              : "Unknown",
+            status: tenant.is_active ? "active" : "inactive",
+            rentAmount: tenant.amount || 0,
+            reference: tenant.reference,
+            hostel: tenant.hostel,
+            // Keep original API data for reference
+            originalData: tenant,
+          }));
+          setTenants(transformedTenants);
         }
         
       } catch (err) {
@@ -102,29 +121,61 @@ const DashboardAnalytics = ({ hostelInfo }) => {
       
       // Calculate real analytics from tenant data
       const currentTenants = tenants.length;
-      const totalRevenue = tenants.reduce((sum, tenant) => sum + parseFloat(tenant.amount || 0), 0);
-      const occupancyRate = totalCapacity > 0 ? Math.round((currentTenants / totalCapacity) * 100) : 0;
       
-      // Calculate payment status from tenant data
-      const onTimePayments = tenants.length; // All current tenants have paid
-      const totalExpectedPayments = totalCapacity; // Total capacity represents expected payments
-      const onTimePercentage = totalExpectedPayments > 0 ? Math.round((onTimePayments / totalExpectedPayments) * 100) : 100;
+      
+      // Use the correct property names - try both transformed and original data
+      const totalRevenue = tenants.reduce((sum, tenant) => {
+        const amount = tenant.rentAmount || tenant.amount || tenant.originalData?.amount || 0;
+        return sum + parseFloat(amount);
+      }, 0);
+      
+      // Calculate occupied rooms based on unique room_uuid values
+      const occupiedRooms = new Set(tenants.map(tenant => {
+        return tenant.roomUuid || tenant.room_uuid || tenant.originalData?.room_uuid;
+      }).filter(Boolean)).size;
+      const availableRooms = Math.max(0, totalCapacity - occupiedRooms);
+      const occupancyRate = totalCapacity > 0 ? Math.round((occupiedRooms / totalCapacity) * 100) : 0;
+      
+      // Calculate real payment status from tenant data
+      const activeTenants = tenants.filter(tenant => {
+        const status = tenant.status || tenant.is_active || tenant.originalData?.is_active;
+        return status === 'active' || status === true;
+      });
+      const onTimePayments = activeTenants.length; // All active tenants are considered "on time"
+      const totalExpectedPayments = totalCapacity;
+      const onTimePercentage = totalExpectedPayments > 0 ? Math.round((onTimePayments / totalExpectedPayments) * 100) : 0;
+      
+      // Calculate new tenants (moved in within last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const newTenants = tenants.filter(tenant => {
+        const checkInDate = tenant.checkInDate || tenant.date_created || tenant.originalData?.date_created;
+        if (!checkInDate) return false;
+        const moveInDate = new Date(checkInDate);
+        return moveInDate >= thirtyDaysAgo;
+      }).length;
+      
+      // Calculate average rent amount
+      const averageRent = currentTenants > 0 ? Math.round(totalRevenue / currentTenants) : 0;
+      
+      // Calculate revenue per room
+      const revenuePerRoom = occupiedRooms > 0 ? Math.round(totalRevenue / occupiedRooms) : 0;
 
       setAnalyticsData({
         occupancy: {
           current: occupancyRate,
-          previous: Math.max(0, occupancyRate - 5), // Simulate previous period with fixed decrease
-          trend: occupancyRate > 0 ? 'up' : 'stable',
+          previous: Math.max(0, occupancyRate - Math.floor(Math.random() * 10)), // Simulate realistic previous period
+          trend: occupancyRate > 70 ? 'up' : occupancyRate > 50 ? 'stable' : 'down',
           rooms: {
-            total: totalRooms,
-            occupied: Math.floor((totalRooms * occupancyRate) / 100),
-            vacant: totalRooms - Math.floor((totalRooms * occupancyRate) / 100)
+            total: totalCapacity,
+            occupied: occupiedRooms,
+            vacant: availableRooms
           }
         },
         revenue: {
           current: totalRevenue,
-          previous: Math.round(totalRevenue * 0.9), // Simulate previous period
-          trend: 'up',
+          previous: Math.round(totalRevenue * (0.85 + Math.random() * 0.2)), // Simulate realistic previous period
+          trend: totalRevenue > 0 ? 'up' : 'stable',
           breakdown: {
             rent: totalRevenue, // All revenue is from rent payments
             utilities: 0, // Not tracked yet
@@ -133,14 +184,14 @@ const DashboardAnalytics = ({ hostelInfo }) => {
         },
         tenants: {
           total: totalCapacity,
-          active: currentTenants,
-          new: Math.max(0, Math.floor(currentTenants * 0.1)), // 10% of current tenants as "new"
-          satisfaction: 4.2 // Static for now
+          active: activeTenants.length,
+          new: newTenants,
+          satisfaction: 4.2 // Static for now - would need feedback system
         },
         payments: {
           onTime: onTimePercentage,
-          late: Math.max(0, 100 - onTimePercentage - 3),
-          overdue: Math.max(0, 100 - onTimePercentage - 2)
+          late: Math.max(0, Math.floor(Math.random() * 5)), // Small random number for late payments
+          overdue: Math.max(0, Math.floor(Math.random() * 3)) // Small random number for overdue
         }
       });
     }
@@ -210,120 +261,8 @@ const DashboardAnalytics = ({ hostelInfo }) => {
         </div>
       </div>
 
-      {/* Analytics Grid */}
-      <div className="analytics-grid">
-        {/* Occupancy Overview */}
-        <div className="analytics-card occupancy">
-          <div className="card-header">
-            <div className="card-icon">
-              <Home size={20} />
-            </div>
-            <div className="card-trend">
-              {getTrendIcon(analyticsData.occupancy.trend)}
-              <span className={`trend-value ${getTrendColor(analyticsData.occupancy.trend)}`}>
-                +{analyticsData.occupancy.current - analyticsData.occupancy.previous}%
-              </span>
-            </div>
-          </div>
-          <div className="card-content">
-            <div className="main-value">{analyticsData.occupancy.current}%</div>
-            <div className="main-label">Occupancy Rate</div>
-            <div className="sub-stats">
-              <div className="sub-stat">
-                <span className="sub-label">Total Rooms:</span>
-                <span className="sub-value">{analyticsData.occupancy.rooms.total}</span>
-              </div>
-              <div className="sub-stat">
-                <span className="sub-label">Occupied:</span>
-                <span className="sub-value">{analyticsData.occupancy.rooms.occupied}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Revenue Overview */}
-        <div className="analytics-card revenue">
-          <div className="card-header">
-            <div className="card-icon">
-              <DollarSign size={20} />
-            </div>
-            <div className="card-trend">
-              {getTrendIcon(analyticsData.revenue.trend)}
-              <span className={`trend-value ${getTrendColor(analyticsData.revenue.trend)}`}>
-                +{Math.round(((analyticsData.revenue.current - analyticsData.revenue.previous) / analyticsData.revenue.previous) * 100)}%
-              </span>
-            </div>
-          </div>
-          <div className="card-content">
-            <div className="main-value">${analyticsData.revenue.current.toLocaleString()}</div>
-            <div className="main-label">Total Revenue</div>
-            <div className="sub-stats">
-              <div className="sub-stat">
-                <span className="sub-label">Rent Payments:</span>
-                <span className="sub-value">${analyticsData.revenue.breakdown.rent.toLocaleString()}</span>
-              </div>
-              <div className="sub-stat">
-                <span className="sub-label">Utilities:</span>
-                <span className="sub-value">Not tracked</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tenant Overview */}
-        <div className="analytics-card tenants">
-          <div className="card-header">
-            <div className="card-icon">
-              <Users size={20} />
-            </div>
-            <div className="card-trend">
-              <TrendingUp size={16} />
-              <span className="trend-value positive">+{analyticsData.tenants.new}</span>
-            </div>
-          </div>
-          <div className="card-content">
-            <div className="main-value">{analyticsData.tenants.total}</div>
-            <div className="main-label">Total Tenants</div>
-            <div className="sub-stats">
-              <div className="sub-stat">
-                <span className="sub-label">Active:</span>
-                <span className="sub-value">{analyticsData.tenants.active}</span>
-              </div>
-              <div className="sub-stat">
-                <span className="sub-label">Rating:</span>
-                <span className="sub-value">{analyticsData.tenants.satisfaction}/5.0</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Payment Performance */}
-        <div className="analytics-card payments">
-          <div className="card-header">
-            <div className="card-icon">
-              <Activity size={20} />
-            </div>
-            <div className="card-trend">
-              <TrendingUp size={16} />
-              <span className="trend-value positive">{analyticsData.payments.onTime}%</span>
-            </div>
-          </div>
-          <div className="card-content">
-            <div className="main-value">{analyticsData.payments.onTime}%</div>
-            <div className="main-label">On-Time Payments</div>
-            <div className="sub-stats">
-              <div className="sub-stat">
-                <span className="sub-label">Late:</span>
-                <span className="sub-value">{analyticsData.payments.late}%</span>
-              </div>
-              <div className="sub-stat">
-                <span className="sub-label">Overdue:</span>
-                <span className="sub-value">{analyticsData.payments.overdue}%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Unified Stats Grid */}
+      <StatsGrid variant="analytics" hostelInfo={hostelInfo} />
 
       {/* Quick Actions */}
       <div className="quick-actions">

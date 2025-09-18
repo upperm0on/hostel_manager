@@ -1,5 +1,5 @@
 // API Configuration
-// Using relative endpoints for better flexibility
+// Using relative endpoints for better deployment flexibility
 
 // API Endpoints - All relative paths
 export const API_ENDPOINTS = {
@@ -31,8 +31,13 @@ export const API_ENDPOINTS = {
   CAMPUS_SEARCH: '/hq/api/search_request/',
 };
 
-// Helper function to get full URL (now just returns the endpoint as-is)
+// Helper function to get API URL
 export const getApiUrl = (endpoint) => {
+  // If endpoint is already absolute, return as-is
+  if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
+    return endpoint;
+  }
+  // Return relative endpoint as-is (browser will resolve relative to current domain)
   return endpoint;
 };
 

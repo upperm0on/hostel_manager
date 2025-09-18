@@ -1,5 +1,6 @@
 import React from 'react';
 import { HostelOverview, BankingDetailsTab } from '../SettingsTabs';
+import RoomOccupancy from '../RoomOccupancy/RoomOccupancy';
 import BankingAlert from '../Common/BankingAlert';
 import './TabContent.css';
 
@@ -16,6 +17,13 @@ const TabContent = ({ activeTab, hostelInfo, bankingDetails, onBankingSave, onTa
         return (
           <div className="tab-panel">
             <HostelOverview hostelInfo={hostelInfo} />
+          </div>
+        );
+      
+      case 'rooms':
+        return (
+          <div className="tab-panel">
+            <RoomOccupancy hostelInfo={hostelInfo} />
           </div>
         );
       

@@ -153,7 +153,28 @@ VITE_APP_NAME=Hostel Manager
 
 ## 📊 **Data Models**
 
-### **Tenant Model**
+### **Tenant Model (API Response)**
+```javascript
+{
+  id: number,
+  user: {
+    id: number,
+    username: string,
+    email: string
+  },
+  room_uuid: string,
+  amount: number,
+  date_created: string,
+  is_active: boolean,
+  reference: string,
+  hostel: {
+    id: number,
+    name: string
+  }
+}
+```
+
+### **Transformed Tenant Model (Frontend)**
 ```javascript
 {
   id: number,
@@ -161,19 +182,13 @@ VITE_APP_NAME=Hostel Manager
   email: string,
   phone: string,
   room: string,
+  roomUuid: string,
   checkInDate: string,
   rentAmount: number,
-  deposit: number,
-  leaseStartDate: string,
-  leaseEndDate: string,
-  emergencyContact: {
-    name: string,
-    phone: string,
-    relationship: string
-  },
-  documents: array,
-  notes: string,
-  status: 'active' | 'overdue' | 'inactive'
+  reference: string,
+  hostel: object,
+  status: 'active' | 'inactive',
+  originalData: object // Original API response
 }
 ```
 

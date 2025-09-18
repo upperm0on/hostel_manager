@@ -1,20 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { Users, Home, DollarSign, AlertCircle } from 'lucide-react';
-import { API_ENDPOINTS } from '../../config/api';
-import StatCard from '../StatCard/StatCard';
-import './DashboardComponents.css';
+import { useState, useEffect } from 'react';
+import { API_ENDPOINTS } from '../config/api';
 
-const DashboardStats = ({ hostelInfo }) => {
+export const useHostelStats = (hostelInfo) => {
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({
     totalTenants: 0,
+    occupiedRooms: 0,
+    availableRooms: 0,
     occupancyRate: 0,
     monthlyRevenue: 0,
-    pendingPayments: 0
+    pendingPayments: 0,
+    activeTenants: 0,
+    newTenants: 0,
+    averageRent: 0,
+    revenuePerRoom: 0
   });
 
-  // Fetch tenants data for stats
+  // Fetch tenants data
   useEffect(() => {
     const fetchTenants = async () => {
       try {
@@ -56,7 +59,6 @@ const DashboardStats = ({ hostelInfo }) => {
             rentAmount: tenant.amount || 0,
             reference: tenant.reference,
             hostel: tenant.hostel,
-            // Keep original API data for reference
             originalData: tenant,
           }));
           setTenants(transformedTenants);
@@ -72,7 +74,7 @@ const DashboardStats = ({ hostelInfo }) => {
     fetchTenants();
   }, []);
 
-  // Calculate real stats when tenants data changes
+  // Calculate stats when data changes
   useEffect(() => {
     if (hostelInfo && tenants.length >= 0) {
       // Calculate real metrics from hostel data
@@ -96,9 +98,30 @@ const DashboardStats = ({ hostelInfo }) => {
       const availableRooms = Math.max(0, totalCapacity - occupiedRooms);
       const occupancyRate = totalCapacity > 0 ? Math.round((occupiedRooms / totalCapacity) * 100) : 0;
       
+      // Calculate active vs inactive tenants
+      const activeTenants = tenants.filter(tenant => {
+        const status = tenant.status || tenant.is_active || tenant.originalData?.is_active;
+        return status === 'active' || status === true;
+      }).length;
+      
+      // Calculate new tenants (moved in within last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const newTenants = tenants.filter(tenant => {
+        const checkInDate = tenant.checkInDate || tenant.date_created || tenant.originalData?.date_created;
+        if (!checkInDate) return false;
+        const moveInDate = new Date(checkInDate);
+        return moveInDate >= thirtyDaysAgo;
+      }).length;
+      
+      // Calculate average rent amount
+      const averageRent = currentTenants > 0 ? Math.round(totalRevenue / currentTenants) : 0;
+      
+      // Calculate revenue per room
+      const revenuePerRoom = occupiedRooms > 0 ? Math.round(totalRevenue / occupiedRooms) : 0;
+      
       // Calculate pending payments (available rooms that could generate revenue)
       const pendingPayments = availableRooms;
-      
 
       setStats({
         totalTenants: currentTenants,
@@ -106,62 +129,18 @@ const DashboardStats = ({ hostelInfo }) => {
         availableRooms: availableRooms,
         occupancyRate: occupancyRate,
         monthlyRevenue: totalRevenue,
-        pendingPayments: pendingPayments
+        pendingPayments: pendingPayments,
+        activeTenants: activeTenants,
+        newTenants: newTenants,
+        averageRent: averageRent,
+        revenuePerRoom: revenuePerRoom
       });
     }
   }, [hostelInfo, tenants]);
-  const statCards = [
-    {
-      icon: Users,
-      title: 'Total Tenants',
-      value: stats.totalTenants,
-      change: '+5%',
-      changeType: 'positive',
-      variant: 'primary'
-    },
-    {
-      icon: Home,
-      title: 'Occupied Rooms',
-      value: stats.occupiedRooms,
-      change: '+2',
-      changeType: 'positive',
-      variant: 'secondary'
-    },
-    {
-      icon: DollarSign,
-      title: 'Monthly Revenue',
-      value: `$${stats.monthlyRevenue.toLocaleString()}`,
-      change: '+12%',
-      changeType: 'positive',
-      variant: 'warning'
-    },
-    {
-      icon: AlertCircle,
-      title: 'Available Rooms',
-      value: stats.availableRooms,
-      change: '-3',
-      changeType: 'negative',
-      variant: 'error'
-    }
-  ];
 
-  return (
-    <div className="dashboard-stats">
-      <div className="stats-grid">
-        {statCards.map((stat, index) => (
-          <StatCard
-            key={index}
-            icon={stat.icon}
-            title={stat.title}
-            value={stat.value}
-            change={stat.change}
-            changeType={stat.changeType}
-            variant={stat.variant}
-          />
-        ))}
-      </div>
-    </div>
-  );
+  return {
+    stats,
+    tenants,
+    loading
+  };
 };
-
-export default DashboardStats;

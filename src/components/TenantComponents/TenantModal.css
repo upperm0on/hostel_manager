@@ -201,6 +201,11 @@
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
 
+.form-input.valid {
+  border-color: var(--success);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+}
+
 .form-textarea {
   min-height: 100px;
   resize: vertical;
@@ -223,6 +228,40 @@
 
 .input-with-icon .form-input {
   padding-left: 40px;
+}
+
+/* Email Validation Styles */
+.email-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.email-validation-icon {
+  position: absolute;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.email-validation-icon .spinning {
+  animation: spin 1s linear infinite;
+  color: var(--primary);
+}
+
+.email-validation-icon .valid-icon {
+  color: var(--success);
+}
+
+.email-validation-icon .invalid-icon {
+  color: var(--error);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Error Messages */

@@ -34,10 +34,10 @@ try {
   // Read the current API config
   let apiConfig = fs.readFileSync(apiConfigPath, 'utf8');
   
-  // Replace the API_BASE_URL
+  // Replace the BASE_URL
   const updatedConfig = apiConfig.replace(
-    /const API_BASE_URL = '[^']*';/,
-    `const API_BASE_URL = '${newApiUrl}';`
+    /const BASE_URL = '[^']*';/,
+    `const BASE_URL = '${newApiUrl}';`
   );
   
   // Write the updated config

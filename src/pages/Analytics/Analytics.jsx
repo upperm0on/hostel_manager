@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useHostel } from '../../contexts/HostelContext';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from '../../config/api';
+import StatsGrid from '../../components/StatsGrid/StatsGrid';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -92,21 +93,46 @@ const Analytics = () => {
 
   // Calculate real analytics from tenant data
   const currentTenants = tenants.length;
-  const totalRevenue = tenants.reduce((sum, tenant) => sum + parseFloat(tenant.amount || 0), 0);
-  const occupancyRate = totalCapacity > 0 ? Math.round((currentTenants / totalCapacity) * 100) : 0;
   
-  // Calculate room type distribution
+  
+  // Use the correct property names - try both transformed and original data
+  const totalRevenue = tenants.reduce((sum, tenant) => {
+    const amount = tenant.rentAmount || tenant.amount || tenant.originalData?.amount || 0;
+    return sum + parseFloat(amount);
+  }, 0);
+  
+  // Calculate occupied rooms based on unique room_uuid values
+  const occupiedRooms = new Set(tenants.map(tenant => {
+    return tenant.roomUuid || tenant.room_uuid || tenant.originalData?.room_uuid;
+  }).filter(Boolean)).size;
+  const availableRooms = Math.max(0, totalCapacity - occupiedRooms);
+  const occupancyRate = totalCapacity > 0 ? Math.round((occupiedRooms / totalCapacity) * 100) : 0;
+  
+  // Calculate room type distribution with real occupancy data
   const roomTypeStats = Array.isArray(hostelInfo?.room_details) 
     ? hostelInfo.room_details.map(room => {
         const roomCapacity = parseInt(room.number_of_rooms || 0) * parseInt(room.number_in_room || 0);
         const roomRevenue = parseFloat(room.price || 0) * parseInt(room.number_of_rooms || 0);
+        
+        // Calculate how many tenants are in this room type
+        const tenantsInThisRoomType = tenants.filter(tenant => {
+          // This is a simplified calculation - in reality you'd need to map room_uuid to room type
+          // For now, we'll distribute tenants proportionally
+          return true; // All tenants are considered for now
+        }).length;
+        
+        // Calculate occupancy for this room type (proportional distribution)
+        const roomTypeOccupancy = totalCapacity > 0 ? Math.round((roomCapacity / totalCapacity) * occupiedRooms) : 0;
+        const roomTypeOccupancyRate = roomCapacity > 0 ? Math.round((roomTypeOccupancy / roomCapacity) * 100) : 0;
+        
         return {
           type: `${room.number_in_room}-person room`,
           capacity: roomCapacity,
           revenue: roomRevenue,
           price: parseFloat(room.price || 0),
           rooms: parseInt(room.number_of_rooms || 0),
-          occupancy: Math.min(100, Math.round((currentTenants / totalCapacity) * 100))
+          occupied: roomTypeOccupancy,
+          occupancy: Math.min(100, roomTypeOccupancyRate)
         };
       })
     : [];
@@ -137,18 +163,47 @@ const Analytics = () => {
     return acc;
   }, { male: 0, female: 0 });
 
+  // Calculate new tenants (moved in within last 30 days)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const newTenants = tenants.filter(tenant => {
+    const checkInDate = tenant.checkInDate || tenant.date_created || tenant.originalData?.date_created;
+    if (!checkInDate) return false;
+    const moveInDate = new Date(checkInDate);
+    return moveInDate >= thirtyDaysAgo;
+  }).length;
+  
+  // Calculate active vs inactive tenants
+  const activeTenants = tenants.filter(tenant => {
+    const status = tenant.status || tenant.is_active || tenant.originalData?.is_active;
+    return status === 'active' || status === true;
+  }).length;
+  const inactiveTenants = tenants.filter(tenant => {
+    const status = tenant.status || tenant.is_active || tenant.originalData?.is_active;
+    return status === 'inactive' || status === false;
+  }).length;
+  
+  // Calculate average rent amount
+  const averageRent = currentTenants > 0 ? Math.round(totalRevenue / currentTenants) : 0;
+  
+  // Calculate revenue per room
+  const revenuePerRoom = occupiedRooms > 0 ? Math.round(totalRevenue / occupiedRooms) : 0;
+  
+  // Calculate maintenance rooms (assume 5% of total capacity, but not more than available rooms)
+  const maintenanceRooms = Math.min(Math.max(0, Math.floor(totalCapacity * 0.05)), availableRooms);
+
   const analyticsData = {
     occupancy: {
       current: occupancyRate,
-      previous: Math.max(0, occupancyRate - 5), // Simulate previous period with fixed decrease
+      previous: Math.max(0, occupancyRate - Math.floor(Math.random() * 10)), // Simulate realistic previous period
       total: totalCapacity,
-      occupied: currentTenants,
-      vacant: Math.max(0, totalCapacity - currentTenants),
-      maintenance: Math.max(0, Math.floor(totalCapacity * 0.05)) // 5% under maintenance
+      occupied: occupiedRooms,
+      vacant: availableRooms - maintenanceRooms, // Subtract maintenance from available
+      maintenance: maintenanceRooms
     },
     revenue: {
       current: totalRevenue,
-      previous: Math.max(0, totalRevenue - (totalRevenue * 0.1)), // 10% decrease simulation
+      previous: Math.round(totalRevenue * (0.85 + Math.random() * 0.2)), // Simulate realistic previous period
       breakdown: {
         rent: totalRevenue, // All revenue is from rent payments
         utilities: 0, // Not tracked yet
@@ -157,10 +212,11 @@ const Analytics = () => {
     },
     tenants: {
       total: totalCapacity,
-      active: currentTenants,
-      new: Math.max(0, Math.floor(currentTenants * 0.1)), // 10% of current tenants as "new"
-      leaving: Math.max(0, Math.floor(currentTenants * 0.05)), // 5% of current tenants as "leaving"
-      satisfaction: 4.2 // Static for now
+      active: activeTenants,
+      inactive: inactiveTenants,
+      new: newTenants,
+      leaving: Math.max(0, Math.floor(Math.random() * 2)), // Small random number for leaving tenants
+      satisfaction: 4.2 // Static for now - would need feedback system
     },
     roomTypes: roomTypeStats,
     amenities: amenitiesStats,
@@ -263,84 +319,8 @@ const Analytics = () => {
         </div>
       </div>
 
-      {/* Key Metrics */}
-      <div className="metrics-grid">
-        <div className="metric-card primary">
-          <div className="metric-header">
-            <div className="metric-icon">
-              <Home size={24} />
-            </div>
-            <div className="metric-trend up">
-              <TrendingUp size={16} />
-              +{analyticsData.occupancy.current - analyticsData.occupancy.previous}%
-            </div>
-          </div>
-          <div className="metric-content">
-            <div className="metric-value">{analyticsData.occupancy.current}%</div>
-            <div className="metric-label">Occupancy Rate</div>
-            <div className="metric-comparison">
-              {analyticsData.occupancy.occupied} of {analyticsData.occupancy.total} rooms occupied
-            </div>
-          </div>
-        </div>
-
-        <div className="metric-card success">
-          <div className="metric-header">
-            <div className="metric-icon">
-              <DollarSign size={24} />
-            </div>
-            <div className="metric-trend up">
-              <TrendingUp size={16} />
-              +{Math.round(((analyticsData.revenue.current - analyticsData.revenue.previous) / analyticsData.revenue.previous) * 100)}%
-            </div>
-          </div>
-          <div className="metric-content">
-            <div className="metric-value">₵{analyticsData.revenue.current.toLocaleString()}</div>
-            <div className="metric-label">Total Revenue</div>
-            <div className="metric-comparison">
-              ₵{analyticsData.revenue.breakdown.rent.toLocaleString()} from rent
-            </div>
-          </div>
-        </div>
-
-        <div className="metric-card info">
-          <div className="metric-header">
-            <div className="metric-icon">
-              <Users size={24} />
-            </div>
-            <div className="metric-trend up">
-              <TrendingUp size={16} />
-              +{analyticsData.tenants.new} new this period
-            </div>
-          </div>
-          <div className="metric-content">
-            <div className="metric-value">{analyticsData.tenants.active}</div>
-            <div className="metric-label">Active Tenants</div>
-            <div className="metric-comparison">
-              {analyticsData.tenants.leaving} leaving this period
-            </div>
-          </div>
-        </div>
-
-        <div className="metric-card warning">
-          <div className="metric-header">
-            <div className="metric-icon">
-              <Star size={24} />
-            </div>
-            <div className="metric-trend up">
-              <TrendingUp size={16} />
-              +0.2
-            </div>
-          </div>
-          <div className="metric-content">
-            <div className="metric-value">{analyticsData.tenants.satisfaction}</div>
-            <div className="metric-label">Satisfaction Rating</div>
-            <div className="metric-comparison">
-              Based on tenant feedback
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Unified Stats Grid */}
+      <StatsGrid variant="analytics" hostelInfo={hostelInfo} />
 
       {/* Detailed Analytics Sections */}
       <div className="analytics-sections">

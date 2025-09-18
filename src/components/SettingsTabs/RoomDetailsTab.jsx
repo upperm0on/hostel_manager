@@ -1,17 +1,70 @@
-import React, { useState } from 'react';
-import { Home, Plus, Users, DollarSign, Trash2, Settings, Edit3, Eye, EyeOff, Check, X, Upload, Image as ImageIcon } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Home, Plus, Users, DollarSign, Trash2, Settings, Edit3, Eye, EyeOff, Check, X, Upload, Image as ImageIcon, AlertTriangle } from 'lucide-react';
 import './SettingsTabs.css';
+import { getMinimumRoomsRequired } from '../../utils/roomUtils';
+import { API_ENDPOINTS } from '../../config/api';
 
 const RoomDetailsTab = ({ 
   roomDetails,
   onAddRoom,
   onRemoveRoom,
   onUpdateRoom,
-  onOpenAmenityModal
+  onOpenAmenityModal,
+  validationErrors = {},
+  hostelInfo
 }) => {
   const [editingRoom, setEditingRoom] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [hoveredRoom, setHoveredRoom] = useState(null);
+  const [tenants, setTenants] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch tenants data to validate room counts
+  useEffect(() => {
+    const fetchTenants = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        const response = await fetch(API_ENDPOINTS.TENANTS_LIST, {
+          headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        // Transform tenant data to match expected format
+        const transformedTenants = data.tenants.map((tenant) => ({
+          id: tenant.id,
+          name: tenant.user?.username || "Unknown",
+          email: tenant.user?.email || "No email",
+          phone: tenant.user?.phone || "No phone",
+          room: tenant.room_uuid || "No room assigned",
+          roomUuid: tenant.room_uuid,
+          checkInDate: tenant.date_created
+            ? new Date(tenant.date_created).toISOString().split("T")[0]
+            : "Unknown",
+          status: tenant.is_active ? "active" : "inactive",
+          rentAmount: tenant.amount || 0,
+          reference: tenant.reference,
+          hostel: tenant.hostel,
+          originalData: tenant,
+        }));
+        setTenants(transformedTenants);
+      } catch (error) {
+        console.error('Error fetching tenants for room validation:', error);
+        setTenants([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTenants();
+  }, []);
 
   const handleEditToggle = (roomId) => {
     setEditingRoom(editingRoom === roomId ? null : roomId);
@@ -23,9 +76,44 @@ const RoomDetailsTab = ({
   };
 
   const getRoomStats = (room) => {
-    const totalCapacity = (room.numberInRoom || 0) * (room.quantity || 0);
-    const totalRevenue = (room.price || 0) * (room.quantity || 0);
+    const totalCapacity = (room.number_in_room || 0) * (room.number_of_rooms || 0);
+    const totalRevenue = (room.price || 0) * (room.number_of_rooms || 0);
     return { totalCapacity, totalRevenue };
+  };
+
+  const getFieldError = (roomId, fieldName) => {
+    // Map display names to actual field names
+    const fieldMapping = {
+      'room_label': 'room_label',
+      'room_capacity': 'number_in_room',
+      'number_of_rooms': 'number_of_rooms',
+      'room_price': 'price',
+      'male_rooms': 'male_rooms',
+      'female_rooms': 'female_rooms'
+    };
+    
+    const actualFieldName = fieldMapping[fieldName] || fieldName;
+    const errorKey = `room_${roomId}_${actualFieldName}`;
+    return validationErrors[errorKey] || null;
+  };
+
+  const hasFieldError = (roomId, fieldName) => {
+    return getFieldError(roomId, fieldName) !== null;
+  };
+
+  // Get minimum rooms required for a room type based on current tenant count
+  const getMinimumRoomsForRoom = (room) => {
+    if (!room.room_uuid || !hostelInfo || !tenants.length) {
+      return 0;
+    }
+    return getMinimumRoomsRequired(room.room_uuid, tenants, hostelInfo);
+  };
+
+  // Check if the number of rooms is below the minimum required
+  const isBelowMinimumRooms = (room) => {
+    const currentRooms = parseInt(room.number_of_rooms) || 0;
+    const minimumRequired = getMinimumRoomsForRoom(room);
+    return currentRooms < minimumRequired;
   };
 
   return (
@@ -76,7 +164,9 @@ const RoomDetailsTab = ({
                     <div className="room-card-header">
                       <div className="room-type-info">
                         <div className="room-type-badge">
-                          <span className="room-number">#{index + 1}</span>
+                          <span className="room-number">
+                            {room.room_label || `${room.number_in_room || 'N/A'}-Person Room`}
+                          </span>
                           <span className="room-label">Room Type</span>
                         </div>
                         <div className="room-quick-stats">
@@ -136,6 +226,28 @@ const RoomDetailsTab = ({
                     {/* Collapsible Form Section */}
                     <div className={`room-form-collapsible ${isEditing ? 'expanded' : 'collapsed'}`}>
                       <div className="form-row">
+                        <div className="form-group full-width">
+                          <label className="form-label">
+                            <Edit3 size={16} />
+                            Room Label
+                          </label>
+                          <input
+                            type="text"
+                            className={`form-input ${hasFieldError(room.id, 'room_label') ? 'field-error' : ''}`}
+                            placeholder="e.g., Deluxe Room, Standard Room, Economy Room"
+                            value={room.room_label || ''}
+                            onChange={(e) => onUpdateRoom(room.id, 'room_label', e.target.value)}
+                          />
+                          <small className="form-help">Give this room type a custom name</small>
+                          {hasFieldError(room.id, 'room_label') && (
+                            <div className="validation-error">
+                              {getFieldError(room.id, 'room_label')}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="form-row">
                         <div className="form-group">
                           <label className="form-label">
                             <Users size={16} />
@@ -144,14 +256,35 @@ const RoomDetailsTab = ({
                           <div className="input-with-suffix">
                             <input
                               type="number"
-                              className="form-input"
+                              className={`form-input ${hasFieldError(room.id, 'room_capacity') ? 'field-error' : ''}`}
                               placeholder="2"
-                              value={room.numberInRoom}
-                              onChange={(e) => onUpdateRoom(room.id, 'numberInRoom', e.target.value)}
+                              value={room.number_in_room}
+                              onChange={(e) => {
+                                const inputValue = e.target.value;
+                                
+                                // Allow empty string for typing
+                                if (inputValue === '') {
+                                  onUpdateRoom(room.id, 'number_in_room', '');
+                                  return;
+                                }
+                                
+                                // Only allow positive integers
+                                const newCapacity = parseInt(inputValue);
+                                if (isNaN(newCapacity) || newCapacity < 0) {
+                                  return; // Don't update if invalid
+                                }
+                                
+                                onUpdateRoom(room.id, 'number_in_room', newCapacity);
+                              }}
                               min="1"
                               max="20"
                             />
                             <span className="input-suffix">people</span>
+                            {hasFieldError(room.id, 'room_capacity') && (
+                              <div className="validation-error">
+                                {getFieldError(room.id, 'room_capacity')}
+                              </div>
+                            )}
                           </div>
                         </div>
                         
@@ -163,24 +296,62 @@ const RoomDetailsTab = ({
                           <div className="input-with-suffix">
                             <input
                               type="number"
-                              className="form-input"
+                              className={`form-input ${hasFieldError(room.id, 'number_of_rooms') ? 'field-error' : ''}`}
                               placeholder="10"
-                              value={room.quantity}
+                              value={room.number_of_rooms}
                               onChange={(e) => {
-                                const newQuantity = parseInt(e.target.value) || 0;
-                                onUpdateRoom(room.id, 'quantity', newQuantity);
+                                const inputValue = e.target.value;
+                                
+                                // Allow empty string for typing
+                                if (inputValue === '') {
+                                  onUpdateRoom(room.id, 'number_of_rooms', '');
+                                  return;
+                                }
+                                
+                                // Only allow positive integers
+                                const newQuantity = parseInt(inputValue);
+                                if (isNaN(newQuantity) || newQuantity < 0) {
+                                  return; // Don't update if invalid
+                                }
+                                
+                                // Check if new quantity is below minimum required
+                                const minimumRequired = getMinimumRoomsForRoom(room);
+                                if (newQuantity < minimumRequired) {
+                                  // Don't allow setting below minimum
+                                  return;
+                                }
+                                
+                                onUpdateRoom(room.id, 'number_of_rooms', newQuantity);
                                 
                                 // Auto-split rooms when total changes and gender is mixed
                                 if (room.gender === 'mixed' && newQuantity > 0) {
-                                  const maleRooms = Math.round(newQuantity / 2);
-                                  const femaleRooms = newQuantity - maleRooms;
-                                  onUpdateRoom(room.id, 'maleRooms', maleRooms);
-                                  onUpdateRoom(room.id, 'femaleRooms', femaleRooms);
+                                  // Male gets the rounded up number (no decimals)
+                                  const maleRooms = Math.ceil(newQuantity / 2);
+                                  const femaleRooms = Math.max(0, newQuantity - maleRooms);
+                                  onUpdateRoom(room.id, 'male_rooms', maleRooms);
+                                  onUpdateRoom(room.id, 'female_rooms', femaleRooms);
+                                } else if (newQuantity === 0) {
+                                  // Clear gender allocations if no rooms
+                                  onUpdateRoom(room.id, 'male_rooms', 0);
+                                  onUpdateRoom(room.id, 'female_rooms', 0);
                                 }
                               }}
-                              min="1"
+                              min={getMinimumRoomsForRoom(room)}
                             />
                             <span className="input-suffix">rooms</span>
+                            {hasFieldError(room.id, 'number_of_rooms') && (
+                              <div className="validation-error">
+                                {getFieldError(room.id, 'number_of_rooms')}
+                              </div>
+                            )}
+                            {isBelowMinimumRooms(room) && (
+                              <div className="validation-error tenant-warning">
+                                <AlertTriangle size={14} />
+                                <span>
+                                  Minimum {getMinimumRoomsForRoom(room)} rooms required for current tenants
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -195,7 +366,7 @@ const RoomDetailsTab = ({
                             <span className="input-prefix">₵</span>
                             <input
                               type="number"
-                              className="form-input"
+                              className={`form-input ${hasFieldError(room.id, 'room_price') ? 'field-error' : ''}`}
                               placeholder="0.00"
                               value={room.price}
                               onChange={(e) => onUpdateRoom(room.id, 'price', e.target.value)}
@@ -203,6 +374,11 @@ const RoomDetailsTab = ({
                               step="0.01"
                             />
                           </div>
+                          {hasFieldError(room.id, 'room_price') && (
+                            <div className="validation-error">
+                              {getFieldError(room.id, 'room_price')}
+                            </div>
+                          )}
                         </div>
                         
                         <div className="form-group">
@@ -210,8 +386,8 @@ const RoomDetailsTab = ({
                           <div className="gender-selector">
                             {[
                               { value: 'mixed', label: 'Mixed', icon: '⚥', color: '#8b5cf6' },
-                              { value: 'males', label: 'Male Only', icon: '♂', color: '#3b82f6' },
-                              { value: 'females', label: 'Female Only', icon: '♀', color: '#ec4899' }
+                              { value: 'male', label: 'Male Only', icon: '♂', color: '#3b82f6' },
+                              { value: 'female', label: 'Female Only', icon: '♀', color: '#ec4899' }
                             ].map((option) => (
                               <button
                                 key={option.value}
@@ -220,20 +396,21 @@ const RoomDetailsTab = ({
                                 onClick={() => {
                                   const newGender = option.value;
                                   onUpdateRoom(room.id, 'gender', newGender);
-                                  
-                                  // Auto-split rooms when changing to mixed
+
+                                  const totalRooms = parseInt(room.number_of_rooms) || 0;
                                   if (newGender === 'mixed') {
-                                    const totalRooms = parseInt(room.quantity) || 0;
                                     if (totalRooms > 0) {
-                                      const maleRooms = Math.round(totalRooms / 2);
-                                      const femaleRooms = totalRooms - maleRooms;
-                                      onUpdateRoom(room.id, 'maleRooms', maleRooms);
-                                      onUpdateRoom(room.id, 'femaleRooms', femaleRooms);
+                                      const maleRooms = Math.ceil(totalRooms / 2);
+                                      const femaleRooms = Math.max(0, totalRooms - maleRooms);
+                                      onUpdateRoom(room.id, 'male_rooms', maleRooms);
+                                      onUpdateRoom(room.id, 'female_rooms', femaleRooms);
                                     }
-                                  } else {
-                                    // Clear male/female rooms when not mixed
-                                    onUpdateRoom(room.id, 'maleRooms', 0);
-                                    onUpdateRoom(room.id, 'femaleRooms', 0);
+                                  } else if (newGender === 'male') {
+                                    onUpdateRoom(room.id, 'male_rooms', totalRooms);
+                                    onUpdateRoom(room.id, 'female_rooms', 0);
+                                  } else if (newGender === 'female') {
+                                    onUpdateRoom(room.id, 'male_rooms', 0);
+                                    onUpdateRoom(room.id, 'female_rooms', totalRooms);
                                   }
                                 }}
                                 style={{ '--option-color': option.color }}
@@ -259,16 +436,32 @@ const RoomDetailsTab = ({
                                   type="number"
                                   className="form-input"
                                   placeholder="0"
-                                  value={room.maleRooms || ''}
+                                  value={room.male_rooms || ''}
                                   onChange={(e) => {
-                                    const maleRooms = parseInt(e.target.value) || 0;
-                                    const totalRooms = parseInt(room.quantity) || 0;
-                                    const femaleRooms = Math.max(0, totalRooms - maleRooms);
-                                    onUpdateRoom(room.id, 'maleRooms', maleRooms);
-                                    onUpdateRoom(room.id, 'femaleRooms', femaleRooms);
+                                    const inputValue = e.target.value;
+                                    
+                                    // Allow empty string for typing
+                                    if (inputValue === '') {
+                                      onUpdateRoom(room.id, 'male_rooms', '');
+                                      return;
+                                    }
+                                    
+                                    const maleRooms = parseInt(inputValue);
+                                    if (isNaN(maleRooms) || maleRooms < 0) {
+                                      return; // Don't update if invalid
+                                    }
+                                    
+                                    const totalRooms = parseInt(room.number_of_rooms) || 0;
+                                    
+                                    // Ensure male rooms don't exceed total and don't go below 0
+                                    const validMaleRooms = Math.max(0, Math.min(maleRooms, totalRooms));
+                                    const femaleRooms = Math.max(0, totalRooms - validMaleRooms);
+                                    
+                                    onUpdateRoom(room.id, 'male_rooms', validMaleRooms);
+                                    onUpdateRoom(room.id, 'female_rooms', femaleRooms);
                                   }}
                                   min="0"
-                                  max={room.quantity || 0}
+                                  max={room.number_of_rooms || 0}
                                 />
                                 <span className="input-suffix">rooms</span>
                               </div>
@@ -284,41 +477,77 @@ const RoomDetailsTab = ({
                                   type="number"
                                   className="form-input"
                                   placeholder="0"
-                                  value={room.femaleRooms || ''}
+                                  value={room.female_rooms || ''}
                                   onChange={(e) => {
-                                    const femaleRooms = parseInt(e.target.value) || 0;
-                                    const totalRooms = parseInt(room.quantity) || 0;
-                                    const maleRooms = Math.max(0, totalRooms - femaleRooms);
-                                    onUpdateRoom(room.id, 'femaleRooms', femaleRooms);
-                                    onUpdateRoom(room.id, 'maleRooms', maleRooms);
+                                    const inputValue = e.target.value;
+                                    
+                                    // Allow empty string for typing
+                                    if (inputValue === '') {
+                                      onUpdateRoom(room.id, 'female_rooms', '');
+                                      return;
+                                    }
+                                    
+                                    const femaleRooms = parseInt(inputValue);
+                                    if (isNaN(femaleRooms) || femaleRooms < 0) {
+                                      return; // Don't update if invalid
+                                    }
+                                    
+                                    const totalRooms = parseInt(room.number_of_rooms) || 0;
+                                    
+                                    // Ensure female rooms don't exceed total and don't go below 0
+                                    const validFemaleRooms = Math.max(0, Math.min(femaleRooms, totalRooms));
+                                    const maleRooms = Math.max(0, totalRooms - validFemaleRooms);
+                                    
+                                    onUpdateRoom(room.id, 'female_rooms', validFemaleRooms);
+                                    onUpdateRoom(room.id, 'male_rooms', maleRooms);
                                   }}
                                   min="0"
-                                  max={room.quantity || 0}
+                                  max={room.number_of_rooms || 0}
                                 />
                                 <span className="input-suffix">rooms</span>
                               </div>
                             </div>
                           </div>
 
+                          <div className="gender-allocation-help">
+                            <small className="form-help">
+                              💡 Total allocated rooms (Male + Female) cannot exceed the total number of rooms. 
+                              Only whole numbers are allowed.
+                            </small>
+                          </div>
+
                           <div className="gender-split-helper">
                             <div className="helper-header">
                               <span>Room Allocation Summary</span>
+                              {(() => {
+                                const totalRooms = parseInt(room.number_of_rooms) || 0;
+                                const maleRooms = parseInt(room.male_rooms) || 0;
+                                const femaleRooms = parseInt(room.female_rooms) || 0;
+                                const allocatedTotal = maleRooms + femaleRooms;
+                                const isValid = allocatedTotal <= totalRooms && allocatedTotal > 0;
+                                
+                                return (
+                                  <div className={`allocation-status ${isValid ? 'valid' : 'invalid'}`}>
+                                    {isValid ? '✓ Valid' : '⚠ Check allocation'}
+                                  </div>
+                                );
+                              })()}
                             </div>
                             <div className="helper-stats">
                               <div className="helper-stat">
                                 <span className="stat-label">Total Rooms</span>
-                                <span className="stat-value">{room.quantity || 0}</span>
+                                <span className="stat-value">{room.number_of_rooms || 0}</span>
                               </div>
                               <div className="helper-stat">
                                 <span className="stat-label">Male Rooms</span>
-                                <span className="stat-value male">{room.maleRooms || 0}</span>
+                                <span className="stat-value male">{room.male_rooms || 0}</span>
                               </div>
                               <div className="helper-stat">
                                 <span className="stat-label">Female Rooms</span>
-                                <span className="stat-value female">{room.femaleRooms || 0}</span>
+                                <span className="stat-value female">{room.female_rooms || 0}</span>
                               </div>
                             </div>
-                            {(room.maleRooms || 0) + (room.femaleRooms || 0) !== (room.quantity || 0) && (
+                            {(room.male_rooms || 0) + (room.female_rooms || 0) !== (room.number_of_rooms || 0) && (
                               <div className="helper-warning">
                                 <span>⚠️</span>
                                 <span>Room allocation doesn't match total rooms</span>
@@ -357,7 +586,7 @@ const RoomDetailsTab = ({
                                 <div className="image-preview-container">
                                   <img 
                                     src={room.room_image} 
-                                    alt={`${room.numberInRoom}-person room`}
+                                    alt={`${room.number_in_room}-person room`}
                                     className="room-image-preview"
                                   />
                                   <div className="image-overlay">
