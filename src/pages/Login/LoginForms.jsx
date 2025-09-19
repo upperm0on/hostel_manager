@@ -15,8 +15,9 @@ function LoginForms() {
 
     async function handleLogin(e) {
     e.preventDefault();
-    const username = e.target.querySelector("#name").value;
+    const email = e.target.querySelector("#name").value;
     const password = e.target.querySelector("#password").value;
+    const username = email;
 
     if (!username || !password) {
       setError("Please enter both username and password");
@@ -30,7 +31,7 @@ function LoginForms() {
       const res = await fetch(API_ENDPOINTS.LOGIN, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, is_manager: true }),
+        body: JSON.stringify({ email, password, is_manager: true }),
       });
 
       if (!res.ok) {

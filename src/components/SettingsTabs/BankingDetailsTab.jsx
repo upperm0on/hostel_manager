@@ -31,7 +31,7 @@ const BankingDetailsTab = ({ hostelInfo, onSave }) => {
   // Check for existing account on component mount
   useEffect(() => {
     const checkExistingAccount = async () => {
-      const token = localStorage.getItem('Token');
+      const token = localStorage.getItem('token');
       
       if (!token) {
         console.log('No token found, user not authenticated');
@@ -112,7 +112,7 @@ const BankingDetailsTab = ({ hostelInfo, onSave }) => {
   // Fetch banks data when component mounts
   useEffect(() => {
     const fetchBanks = async () => {
-      const token = localStorage.getItem('Token');
+      const token = localStorage.getItem('token');
       
       try {
         console.log('Fetching banks data from hq/api/manager/banks...');
@@ -240,7 +240,7 @@ const BankingDetailsTab = ({ hostelInfo, onSave }) => {
 
   const handleSave = async () => {
     if (validateForm()) {
-      const token = localStorage.getItem('Token');
+      const token = localStorage.getItem('token');
       
       try {
         // Prepare data to send - only send bankId, not bankName
