@@ -220,7 +220,16 @@ const RoomOccupancy = ({ hostelInfo }) => {
             <div className="room-type-footer">
               <div className="gender-badge">
                 <MapPin size={14} />
-                <span>{room.gender === 'mixed' ? 'Mixed' : room.gender === 'males' ? 'Male Only' : 'Female Only'}</span>
+                <span>
+                  {room.gender === 'mixed' 
+                    ? `${room.gender?.male || room.male_rooms || 0} Male, ${room.gender?.female || room.female_rooms || 0} Female` 
+                    : room.gender === 'male' 
+                    ? `${room.gender?.male || room.male_rooms || 0} Male Only` 
+                    : room.gender === 'female'
+                    ? `${room.gender?.female || room.female_rooms || 0} Female Only`
+                    : 'Gender Not Set'
+                  }
+                </span>
               </div>
             </div>
           </div>

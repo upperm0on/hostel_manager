@@ -1,50 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AlertTriangle, X, CreditCard } from 'lucide-react';
+import { useBanking } from '../../contexts/BankingContext';
 import './BankingAlert.css';
 
 const BankingAlert = ({ onDismiss, onComplete }) => {
   const [isVisible, setIsVisible] = useState(true);
-  const [bankingComplete, setBankingComplete] = useState(false);
-
-  useEffect(() => {
-    // Check if banking details are complete in localStorage
-    const checkBankingStatus = () => {
-      try {
-        const bankingData = localStorage.getItem('bankingDetails');
-        if (bankingData) {
-          const parsed = JSON.parse(bankingData);
-          // Check if essential banking fields are filled
-          const hasBankName = parsed.bankName && parsed.bankName.trim() !== '';
-          const hasAccountNumber = parsed.accountNumber && parsed.accountNumber.trim() !== '';
-          const hasAccountName = parsed.accountName && parsed.accountName.trim() !== '';
-          
-          setBankingComplete(hasBankName && hasAccountNumber && hasAccountName);
-        } else {
-          setBankingComplete(false);
-        }
-      } catch (error) {
-        console.error('Error checking banking status:', error);
-        setBankingComplete(false);
-      }
-    };
-
-    checkBankingStatus();
-    
-    // Listen for storage changes to update status
-    const handleStorageChange = () => {
-      checkBankingStatus();
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Also check periodically in case of same-tab updates
-    const interval = setInterval(checkBankingStatus, 2000);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
-    };
-  }, []);
+  const { hasBankingInfo, isChecking } = useBanking();
 
   const handleDismiss = () => {
     setIsVisible(false);
@@ -55,8 +16,8 @@ const BankingAlert = ({ onDismiss, onComplete }) => {
     if (onComplete) onComplete();
   };
 
-  // Don't show alert if banking is complete
-  if (bankingComplete || !isVisible) {
+  // Don't show alert if banking is complete or still checking
+  if (hasBankingInfo || !isVisible || isChecking) {
     return null;
   }
 

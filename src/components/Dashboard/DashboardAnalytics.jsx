@@ -13,12 +13,23 @@ import {
 } from 'lucide-react';
 import { API_ENDPOINTS } from '../../config/api';
 import StatsGrid from '../StatsGrid/StatsGrid';
+import ConfirmationModal from '../Common/ConfirmationModal';
 import './DashboardAnalytics.css';
 
 const DashboardAnalytics = ({ hostelInfo }) => {
   const [selectedPeriod, setSelectedPeriod] = useState('semester');
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    showCancel: false,
+    showConfirm: true,
+    confirmText: 'OK',
+    onConfirm: null,
+  });
   const [analyticsData, setAnalyticsData] = useState({
     occupancy: {
       current: 0,
@@ -58,7 +69,7 @@ const DashboardAnalytics = ({ hostelInfo }) => {
     const fetchTenants = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem('Token');
+        const token = localStorage.getItem('token');
         
         if (!token) {
           console.log('No authentication token found');
@@ -214,6 +225,18 @@ const DashboardAnalytics = ({ hostelInfo }) => {
 
   return (
     <div className="dashboard-analytics">
+      <ConfirmationModal
+        isOpen={modalState.isOpen}
+        onClose={() => setModalState((s) => ({ ...s, isOpen: false }))}
+        onConfirm={() => setModalState((s) => ({ ...s, isOpen: false }))}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+        isLoading={false}
+        showCancel={modalState.showCancel}
+        showConfirm={modalState.showConfirm}
+        confirmText={modalState.confirmText}
+      />
       {/* Analytics Header */}
       <div className="analytics-header">
         <div className="analytics-title">
@@ -251,7 +274,16 @@ const DashboardAnalytics = ({ hostelInfo }) => {
                 console.log('Analytics exported successfully');
               } catch (error) {
                 console.error('Error exporting analytics:', error);
-                alert('Failed to export analytics. Please try again.');
+                setModalState({
+                  isOpen: true,
+                  title: 'Export Failed',
+                  message: 'Failed to export analytics. Please try again.',
+                  type: 'danger',
+                  showCancel: false,
+                  showConfirm: true,
+                  confirmText: 'OK',
+                  onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+                });
               }
             }}
           >

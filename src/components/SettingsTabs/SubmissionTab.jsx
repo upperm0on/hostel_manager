@@ -41,7 +41,7 @@ const SubmissionTab = ({
           <div className="summary-list">
             {roomDetails.map((room, index) => (
               <div key={room.id} className="room-summary">
-                <strong>Room {index + 1}:</strong> {room.quantity} rooms, {room.numberInRoom} capacity, ${room.price} price
+                <strong>Room {index + 1}:</strong> {room.quantity} rooms, {room.numberInRoom} capacity, ₵{room.price} price
               </div>
             ))}
           </div>

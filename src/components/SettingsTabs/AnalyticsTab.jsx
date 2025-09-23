@@ -29,6 +29,7 @@ const AnalyticsTab = ({ hostelInfo, onSave }) => {
   const [showOccupancyModal, setShowOccupancyModal] = useState(false);
   const [showRevenueModal, setShowRevenueModal] = useState(false);
   const [showTenantModal, setShowTenantModal] = useState(false);
+  const [infoModal, setInfoModal] = useState({ open: false, title: '', message: '' });
 
   // Fetch tenants data for analytics
   useEffect(() => {
@@ -150,12 +151,12 @@ const AnalyticsTab = ({ hostelInfo, onSave }) => {
 
   const generateReport = () => {
     // In a real app, this would generate and download a PDF/Excel report
-    alert('Report generation feature coming soon!');
+    setInfoModal({ open: true, title: 'Coming Soon', message: 'Report generation feature coming soon!' });
   };
 
   const exportData = () => {
     // In a real app, this would export data to CSV/Excel
-    alert('Data export feature coming soon!');
+    setInfoModal({ open: true, title: 'Coming Soon', message: 'Data export feature coming soon!' });
   };
 
   return (
@@ -725,7 +726,7 @@ const AnalyticsTab = ({ hostelInfo, onSave }) => {
               <button 
                 className="btn btn-primary"
                 onClick={() => {
-                  alert('Goals saved successfully!');
+                  setInfoModal({ open: true, title: 'Success', message: 'Goals saved successfully!' });
                   setShowTenantModal(false);
                 }}
               >
@@ -733,6 +734,18 @@ const AnalyticsTab = ({ hostelInfo, onSave }) => {
               </button>
             </div>
           </div>
+        </div>
+      </Modal>
+
+      {/* Simple Info Modal for small notifications */}
+      <Modal
+        isOpen={infoModal.open}
+        onClose={() => setInfoModal(prev => ({ ...prev, open: false }))}
+        title={infoModal.title}
+        size="small"
+      >
+        <div style={{ padding: '0.5rem 0' }}>
+          <p>{infoModal.message}</p>
         </div>
       </Modal>
 

@@ -14,6 +14,7 @@ import {
 } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
 import { API_ENDPOINTS } from '../../config/api';
+import ConfirmationModal from '../Common/ConfirmationModal';
 import './DashboardCharts.css';
 
 // Register Chart.js components
@@ -37,6 +38,16 @@ const DashboardCharts = ({ hostelInfo }) => {
     occupancyData: [0, 0, 0, 0, 0, 0, 0],
     revenueData: [0, 0, 0, 0, 0, 0, 0],
     labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7']
+  });
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    showCancel: false,
+    showConfirm: true,
+    confirmText: 'OK',
+    onConfirm: null,
   });
 
   // Generate unique chart IDs to prevent canvas reuse issues
@@ -387,6 +398,26 @@ const DashboardCharts = ({ hostelInfo }) => {
 
   return (
     <div className="dashboard-charts">
+      <ConfirmationModal
+        isOpen={modalState.isOpen}
+        onClose={() => setModalState((s) => ({ ...s, isOpen: false }))}
+        onConfirm={() => {
+          if (typeof modalState.onConfirm === 'function') {
+            const cb = modalState.onConfirm;
+            setModalState((s) => ({ ...s, isOpen: false }));
+            cb();
+          } else {
+            setModalState((s) => ({ ...s, isOpen: false }));
+          }
+        }}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+        isLoading={false}
+        showCancel={modalState.showCancel}
+        showConfirm={modalState.showConfirm}
+        confirmText={modalState.confirmText}
+      />
       <div className="charts-header">
         <div className="charts-title">
           <h3>Performance Trends</h3>
@@ -423,7 +454,16 @@ const DashboardCharts = ({ hostelInfo }) => {
               console.log('Performance trends exported successfully');
             } catch (error) {
               console.error('Error exporting trends:', error);
-              alert('Failed to export trends. Please try again.');
+              setModalState({
+                isOpen: true,
+                title: 'Export Failed',
+                message: 'Failed to export trends. Please try again.',
+                type: 'danger',
+                showCancel: false,
+                showConfirm: true,
+                confirmText: 'OK',
+                onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+              });
             }
           }}
         >
@@ -447,7 +487,16 @@ const DashboardCharts = ({ hostelInfo }) => {
                 const details = occupancyData.map((value, index) => 
                   `${labels[index]}: ${value}%`
                 ).join('\n');
-                alert(`Occupancy Rate Details:\n\n${details}\n\nAverage: ${Math.round(occupancyData.reduce((a, b) => a + b, 0) / occupancyData.length)}%`);
+                setModalState({
+                  isOpen: true,
+                  title: 'Occupancy Rate Details',
+                  message: `${details}\n\nAverage: ${Math.round(occupancyData.reduce((a, b) => a + b, 0) / occupancyData.length)}%`,
+                  type: 'info',
+                  showCancel: false,
+                  showConfirm: true,
+                  confirmText: 'Close',
+                  onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+                });
               }}
               title="View Details"
             >
@@ -472,16 +521,25 @@ const DashboardCharts = ({ hostelInfo }) => {
             <div className="chart-trend">
               <TrendingUp size={16} />
               <span className="trend-value positive">
-                +${((revenueData[revenueData.length - 1] - revenueData[0]) / 1000).toFixed(1)}k
+                +₵{((revenueData[revenueData.length - 1] - revenueData[0]) / 1000).toFixed(1)}k
               </span>
             </div>
             <button 
               className="chart-details-btn"
               onClick={() => {
-                const details = revenueData.map((value, index) => 
-                  `${labels[index]}: $${(value / 1000).toFixed(1)}k`
+                const details = (revenueData || []).map((value, index) =>
+                  `${labels[index]}: ₵${(Number(value || 0) / 1000).toFixed(1)}k`
                 ).join('\n');
-                alert(`Revenue Details:\n\n${details}\n\nTotal Growth: $${((revenueData[revenueData.length - 1] - revenueData[0]) / 1000).toFixed(1)}k`);
+                setModalState({
+                  isOpen: true,
+                  title: 'Revenue Details',
+                  message: `${details}\n\nTotal Growth: ₵${((revenueData[revenueData.length - 1] - revenueData[0]) / 1000).toFixed(1)}k`,
+                  type: 'info',
+                  showCancel: false,
+                  showConfirm: true,
+                  confirmText: 'Close',
+                  onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+                });
               }}
               title="View Details"
             >
@@ -509,9 +567,9 @@ const DashboardCharts = ({ hostelInfo }) => {
           </div>
         </div>
         <div className="summary-item">
-          <div className="summary-label">Average Revenue</div>
+          <div className="summary-label">Average Revenue (Yearly)</div>
           <div className="summary-value">
-            ${Math.round(revenueData.reduce((a, b) => a + b, 0) / revenueData.length).toLocaleString()}
+            ₵{Math.round(revenueData.reduce((a, b) => a + b, 0) / revenueData.length).toLocaleString()}
           </div>
         </div>
         <div className="summary-item">

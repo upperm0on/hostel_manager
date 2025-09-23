@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { HostelProvider, useHostel } from './contexts/HostelContext';
+import { BankingProvider } from './contexts/BankingContext';
 import Sidebar from './components/Sidebar/Sidebar';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Tenants from './pages/Tenants/Tenants';
@@ -17,8 +18,7 @@ import './assets/css/theme.css';
 import './assets/css/layout.css';
 
 // Main app content component that uses the contexts
-function AppContent() {
-  const { hasHostel } = useHostel();
+function AppContent() {const { hasHostel } = useHostel();
   const { isAuthenticated } = useAuth();
 
   // If not authenticated, show login page
@@ -77,9 +77,11 @@ function App() {
   return (
     <AuthProvider>
       <HostelProvider>
-        <Router>
-          <AppContent />
-        </Router>
+        <BankingProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </BankingProvider>
       </HostelProvider>
     </AuthProvider>
   );

@@ -8,9 +8,12 @@ import {
   Trash2
 } from 'lucide-react';
 import { API_ENDPOINTS } from '../../config/api';
+import { useBanking } from '../../contexts/BankingContext';
+import ConfirmationModal from '../Common/ConfirmationModal';
 import './BankingDetailsTab.css';
 
 const BankingDetailsTab = ({ hostelInfo, onSave }) => {
+  const { updateBankingStatus } = useBanking();
   const [bankingDetails, setBankingDetails] = useState({
     bankId: hostelInfo?.bankingDetails?.bankId || '',
     bankName: hostelInfo?.bankingDetails?.bankName || '',
@@ -27,6 +30,16 @@ const BankingDetailsTab = ({ hostelInfo, onSave }) => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [hasExistingAccount, setHasExistingAccount] = useState(false);
   const [savedAccountDetails, setSavedAccountDetails] = useState(null);
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    showCancel: false,
+    showConfirm: true,
+    confirmText: 'OK',
+    onConfirm: null,
+  });
 
   // Check for existing account on component mount
   useEffect(() => {
@@ -312,6 +325,9 @@ const BankingDetailsTab = ({ hostelInfo, onSave }) => {
           setSavedAccountDetails(updatedBankingDetails);
           setHasExistingAccount(true);
           
+          // Update global banking status
+          updateBankingStatus();
+          
           // Call the parent onSave function with updated details
           onSave(updatedBankingDetails);
           setIsEditing(false);
@@ -326,12 +342,30 @@ const BankingDetailsTab = ({ hostelInfo, onSave }) => {
         } else {
           // Handle error response
           const errorMessage = responseData.message || 'Failed to save banking details';
-          alert(`Error: ${errorMessage}`);
+          setModalState({
+            isOpen: true,
+            title: 'Save Failed',
+            message: `Error: ${errorMessage}`,
+            type: 'danger',
+            showCancel: false,
+            showConfirm: true,
+            confirmText: 'OK',
+            onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+          });
         }
         
       } catch (error) {
         console.error('Error saving banking details:', error);
-        alert('Failed to save banking details. Please try again.');
+        setModalState({
+          isOpen: true,
+          title: 'Save Failed',
+          message: 'Failed to save banking details. Please try again.',
+          type: 'danger',
+          showCancel: false,
+          showConfirm: true,
+          confirmText: 'OK',
+          onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+        });
       }
     }
   };
@@ -350,26 +384,49 @@ const BankingDetailsTab = ({ hostelInfo, onSave }) => {
   };
 
   const handleDeleteAccount = () => {
-    if (window.confirm('Are you sure you want to delete your banking information? This action cannot be undone.')) {
-      // Clear existing account data
-      localStorage.removeItem('userAccountName');
-      localStorage.removeItem('userBankingDetails');
-      setHasExistingAccount(false);
-      setSavedAccountDetails(null);
-      
-      // Reset form
-      setBankingDetails({
-        bankId: '',
-        bankName: '',
-        accountNumber: '',
-        accountHolderName: ''
-      });
-      setBankSearchTerm('');
-      setValidationErrors({});
-      setIsEditing(false);
-      
-      console.log('Account deleted, localStorage cleared');
-    }
+    setModalState({
+      isOpen: true,
+      title: 'Delete Banking Details',
+      message: 'Are you sure you want to delete your banking information? This action cannot be undone.',
+      type: 'danger',
+      showCancel: true,
+      showConfirm: true,
+      confirmText: 'Delete',
+      onConfirm: () => {
+        // Clear existing account data
+        localStorage.removeItem('userAccountName');
+        localStorage.removeItem('userBankingDetails');
+        setHasExistingAccount(false);
+        setSavedAccountDetails(null);
+        
+        // Update global banking status
+        updateBankingStatus();
+        
+        // Reset form
+        setBankingDetails({
+          bankId: '',
+          bankName: '',
+          accountNumber: '',
+          accountHolderName: ''
+        });
+        setBankSearchTerm('');
+        setValidationErrors({});
+        setIsEditing(false);
+        
+        console.log('Account deleted, localStorage cleared');
+        // show info modal
+        setModalState({
+          isOpen: true,
+          title: 'Deleted',
+          message: 'Banking information deleted successfully.',
+          type: 'info',
+          showCancel: false,
+          showConfirm: true,
+          confirmText: 'OK',
+          onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+        });
+      },
+    });
   };
 
 
@@ -406,6 +463,26 @@ const BankingDetailsTab = ({ hostelInfo, onSave }) => {
 
   return (
     <div className="banking-details-tab">
+      <ConfirmationModal
+        isOpen={modalState.isOpen}
+        onClose={() => setModalState((s) => ({ ...s, isOpen: false }))}
+        onConfirm={() => {
+          if (typeof modalState.onConfirm === 'function') {
+            const cb = modalState.onConfirm;
+            setModalState((s) => ({ ...s, isOpen: false }));
+            cb();
+          } else {
+            setModalState((s) => ({ ...s, isOpen: false }));
+          }
+        }}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+        isLoading={false}
+        showCancel={modalState.showCancel}
+        showConfirm={modalState.showConfirm}
+        confirmText={modalState.confirmText}
+      />
       {/* Header Section */}
       <div className="banking-header">
         <div className="banking-header-content">

@@ -13,6 +13,69 @@ const RoomDetailsTab = ({
   validationErrors = {},
   hostelInfo
 }) => {
+  
+  // Helper function to validate and fix gender allocation
+  const validateAndFixGenderAllocation = (room) => {
+    const totalRooms = parseInt(room.number_of_rooms) || 0;
+    const maleRooms = parseInt(room.gender?.male || room.male_rooms) || 0;
+    const femaleRooms = parseInt(room.gender?.female || room.female_rooms) || 0;
+    
+    if (room.gender === 'male') {
+      // For male-only rooms, all rooms should be male
+      if (maleRooms !== totalRooms || femaleRooms !== 0) {
+        onUpdateRoom(room.id, 'male_rooms', totalRooms);
+        onUpdateRoom(room.id, 'female_rooms', 0);
+      }
+    } else if (room.gender === 'female') {
+      // For female-only rooms, all rooms should be female
+      if (femaleRooms !== totalRooms || maleRooms !== 0) {
+        onUpdateRoom(room.id, 'female_rooms', totalRooms);
+        onUpdateRoom(room.id, 'male_rooms', 0);
+      }
+    } else if (room.gender === 'mixed') {
+      // For mixed rooms, total should equal male + female
+      const currentTotal = maleRooms + femaleRooms;
+      if (currentTotal !== totalRooms) {
+        // Auto-correct to even split
+        const correctedMale = Math.ceil(totalRooms / 2);
+        const correctedFemale = Math.max(0, totalRooms - correctedMale);
+        onUpdateRoom(room.id, 'male_rooms', correctedMale);
+        onUpdateRoom(room.id, 'female_rooms', correctedFemale);
+      }
+    }
+  };
+
+  // Comprehensive validation function for all rooms
+  const validateAllRooms = () => {
+    const errors = [];
+    
+    roomDetails.forEach((room, index) => {
+      const totalRooms = parseInt(room.number_of_rooms) || 0;
+      const maleRooms = parseInt(room.gender?.male || room.male_rooms) || 0;
+      const femaleRooms = parseInt(room.gender?.female || room.female_rooms) || 0;
+      
+      // Check if gender allocation is valid
+      if (room.gender === 'mixed') {
+        const allocatedTotal = maleRooms + femaleRooms;
+        if (allocatedTotal !== totalRooms) {
+          errors.push(`Room ${index + 1}: Gender allocation (${allocatedTotal}) doesn't match total rooms (${totalRooms})`);
+        }
+        if (maleRooms < 0 || femaleRooms < 0) {
+          errors.push(`Room ${index + 1}: Room counts cannot be negative`);
+        }
+      } else if (room.gender === 'male') {
+        if (maleRooms !== totalRooms || femaleRooms !== 0) {
+          errors.push(`Room ${index + 1}: Male-only rooms should have all rooms allocated to males`);
+        }
+      } else if (room.gender === 'female') {
+        if (femaleRooms !== totalRooms || maleRooms !== 0) {
+          errors.push(`Room ${index + 1}: Female-only rooms should have all rooms allocated to females`);
+        }
+      }
+    });
+    
+    return errors;
+  };
   const [editingRoom, setEditingRoom] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [hoveredRoom, setHoveredRoom] = useState(null);
@@ -65,6 +128,13 @@ const RoomDetailsTab = ({
 
     fetchTenants();
   }, []);
+
+  // Validate gender allocation whenever room details change
+  useEffect(() => {
+    roomDetails.forEach(room => {
+      validateAndFixGenderAllocation(room);
+    });
+  }, [roomDetails]);
 
   const handleEditToggle = (roomId) => {
     setEditingRoom(editingRoom === roomId ? null : roomId);
@@ -404,6 +474,9 @@ const RoomDetailsTab = ({
                                       const femaleRooms = Math.max(0, totalRooms - maleRooms);
                                       onUpdateRoom(room.id, 'male_rooms', maleRooms);
                                       onUpdateRoom(room.id, 'female_rooms', femaleRooms);
+                                    } else {
+                                      onUpdateRoom(room.id, 'male_rooms', 0);
+                                      onUpdateRoom(room.id, 'female_rooms', 0);
                                     }
                                   } else if (newGender === 'male') {
                                     onUpdateRoom(room.id, 'male_rooms', totalRooms);
@@ -436,7 +509,7 @@ const RoomDetailsTab = ({
                                   type="number"
                                   className="form-input"
                                   placeholder="0"
-                                  value={room.male_rooms || ''}
+                                  value={room.gender?.male || room.male_rooms || ''}
                                   onChange={(e) => {
                                     const inputValue = e.target.value;
                                     
@@ -477,7 +550,7 @@ const RoomDetailsTab = ({
                                   type="number"
                                   className="form-input"
                                   placeholder="0"
-                                  value={room.female_rooms || ''}
+                                  value={room.gender?.female || room.female_rooms || ''}
                                   onChange={(e) => {
                                     const inputValue = e.target.value;
                                     
@@ -540,14 +613,14 @@ const RoomDetailsTab = ({
                               </div>
                               <div className="helper-stat">
                                 <span className="stat-label">Male Rooms</span>
-                                <span className="stat-value male">{room.male_rooms || 0}</span>
+                                <span className="stat-value male">{room.gender?.male || room.male_rooms || 0}</span>
                               </div>
                               <div className="helper-stat">
                                 <span className="stat-label">Female Rooms</span>
-                                <span className="stat-value female">{room.female_rooms || 0}</span>
+                                <span className="stat-value female">{room.gender?.female || room.female_rooms || 0}</span>
                               </div>
                             </div>
-                            {(room.male_rooms || 0) + (room.female_rooms || 0) !== (room.number_of_rooms || 0) && (
+                            {(room.gender?.male || room.male_rooms || 0) + (room.gender?.female || room.female_rooms || 0) !== (room.number_of_rooms || 0) && (
                               <div className="helper-warning">
                                 <span>⚠️</span>
                                 <span>Room allocation doesn't match total rooms</span>

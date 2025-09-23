@@ -2,7 +2,7 @@ import React from 'react';
 import './SettingsTabs.css';
 
 const ProgressIndicator = ({ currentSlide }) => {
-  const steps = ['Hostel Details', 'General Amenities', 'Room Details', 'Submit'];
+  const steps = ['Hostel Details', 'General Amenities', 'Room Details', 'Terms', 'Submit'];
 
   return (
     <div className="form-progress">

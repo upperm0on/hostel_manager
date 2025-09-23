@@ -129,8 +129,8 @@ const DashboardStats = ({ hostelInfo }) => {
     },
     {
       icon: DollarSign,
-      title: 'Monthly Revenue',
-      value: `$${stats.monthlyRevenue.toLocaleString()}`,
+      title: 'Yearly Revenue',
+      value: `₵${stats.monthlyRevenue.toLocaleString()}`,
       change: '+12%',
       changeType: 'positive',
       variant: 'warning'

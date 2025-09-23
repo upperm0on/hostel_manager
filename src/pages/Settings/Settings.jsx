@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useHostel } from "../../contexts/HostelContext";
 import { Edit, X, ArrowLeft } from "lucide-react";
+import { toNetFromGross } from "../../utils/priceUtils";
 import {
   HostelDetailsTab,
   GeneralAmenitiesTab,
@@ -19,6 +20,8 @@ import {
   SettingsTabsNavigation,
   TabContent
 } from "../../components/Settings";
+import TermsAndConditions from "../../components/TermsAndConditions/TermsAndConditions";
+import ConfirmationModal from "../../components/Common/ConfirmationModal";
 import "./Settings.css";
 
 // Auto-save and validation utilities
@@ -110,12 +113,15 @@ const validateRoomData = (room) => {
   const priceValidation = validateNumberField(room.price, 'Room Price', 0, 100000);
   if (!priceValidation.isValid) errors.push(priceValidation.error);
   
-  // Validate gender allocation if mixed
+  // Validate gender allocation if mixed - support both data structures
   if (room.gender === 'mixed') {
-    const maleValidation = validateNumberField(room.male_rooms, 'Male Rooms', 0, quantityValidation.value || room.number_of_rooms);
+    const maleRoomsValue = room.gender?.male !== undefined ? room.gender.male : room.male_rooms;
+    const femaleRoomsValue = room.gender?.female !== undefined ? room.gender.female : room.female_rooms;
+    
+    const maleValidation = validateNumberField(maleRoomsValue, 'Male Rooms', 0, quantityValidation.value || room.number_of_rooms);
     if (!maleValidation.isValid) errors.push(maleValidation.error);
     
-    const femaleValidation = validateNumberField(room.female_rooms, 'Female Rooms', 0, quantityValidation.value || room.number_of_rooms);
+    const femaleValidation = validateNumberField(femaleRoomsValue, 'Female Rooms', 0, quantityValidation.value || room.number_of_rooms);
     if (!femaleValidation.isValid) errors.push(femaleValidation.error);
     
     // Check if total matches
@@ -149,6 +155,17 @@ const Settings = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const [lastSaved, setLastSaved] = useState(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    showCancel: false,
+    showConfirm: true,
+    confirmText: 'OK',
+    onConfirm: null,
+  });
 
   // Handle refresh with loading state
   const handleRefresh = async () => {
@@ -159,11 +176,29 @@ const Settings = () => {
         console.log('Manual refresh successful');
       } else {
         console.error('Manual refresh failed:', result.error);
-        alert('Failed to refresh data. Please try again.');
+        setModalState({
+          isOpen: true,
+          title: 'Refresh Failed',
+          message: 'Failed to refresh data. Please try again.',
+          type: 'warning',
+          showCancel: false,
+          showConfirm: true,
+          confirmText: 'OK',
+          onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+        });
       }
     } catch (error) {
       console.error('Error during manual refresh:', error);
-      alert('Error refreshing data. Please try again.');
+      setModalState({
+        isOpen: true,
+        title: 'Error',
+        message: 'Error refreshing data. Please try again.',
+        type: 'danger',
+        showCancel: false,
+        showConfirm: true,
+        confirmText: 'OK',
+        onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+      });
     } finally {
       setIsRefreshing(false);
     }
@@ -229,7 +264,8 @@ const Settings = () => {
             room_label: room.room_label || "",
             number_in_room: room.number_in_room || "",
             number_of_rooms: room.number_of_rooms || "",
-            price: room.price || "",
+            // Convert stored gross price back to net for manager UI
+            price: room.price != null && room.price !== '' ? toNetFromGross(room.price) : "",
             // Normalize gender selection for UI: prefer explicit male/female if exclusive, otherwise mixed
             gender: (room.gender?.male && !room.gender?.female) ? "male"
               : (room.gender?.female && !room.gender?.male) ? "female"
@@ -448,7 +484,7 @@ const Settings = () => {
   };
 
   const nextSlide = () => {
-    if (currentSlide < 3) {
+    if (currentSlide < 4) {
       setCurrentSlide(currentSlide + 1);
     }
   };
@@ -490,9 +526,14 @@ const Settings = () => {
       const numberInRoom = room.number_in_room === '' || room.number_in_room == null ? 0 : parseInt(room.number_in_room, 10);
       const numberOfRooms = room.number_of_rooms === '' || room.number_of_rooms == null ? 0 : parseInt(room.number_of_rooms, 10);
       const priceStr = room.price == null || room.price === '' ? '0' : String(room.price);
-      // Normalize gender allocations based on selected gender
-      let maleRooms = room.male_rooms === '' || room.male_rooms == null ? 0 : parseInt(room.male_rooms, 10);
-      let femaleRooms = room.female_rooms === '' || room.female_rooms == null ? 0 : parseInt(room.female_rooms, 10);
+      // Apply 4% service fee to the saved price so backend receives the gross amount
+      const basePrice = parseFloat(priceStr);
+      const priceWithFee = isNaN(basePrice)
+        ? '0'
+        : (Math.round(basePrice * 1.04 * 100) / 100).toFixed(2);
+      // Normalize gender allocations based on selected gender - support both data structures
+      let maleRooms = room.gender?.male !== undefined ? parseInt(room.gender.male, 10) : (room.male_rooms === '' || room.male_rooms == null ? 0 : parseInt(room.male_rooms, 10));
+      let femaleRooms = room.gender?.female !== undefined ? parseInt(room.gender.female, 10) : (room.female_rooms === '' || room.female_rooms == null ? 0 : parseInt(room.female_rooms, 10));
       const genderSelection = room.gender;
       if (genderSelection === 'male') {
         maleRooms = isNaN(numberOfRooms) ? 0 : numberOfRooms;
@@ -526,7 +567,7 @@ const Settings = () => {
       return {
         number_in_room: isNaN(numberInRoom) ? 0 : numberInRoom,
         number_of_rooms: isNaN(numberOfRooms) ? 0 : numberOfRooms,
-        price: priceStr,
+        price: String(priceWithFee),
         gender: {
           male: isNaN(maleRooms) ? 0 : maleRooms,
           female: isNaN(femaleRooms) ? 0 : femaleRooms,
@@ -557,7 +598,16 @@ const Settings = () => {
       if (hasHostel) {
         result = await updateHostel(payload);
         if (result.success) {
-          alert("Hostel information updated successfully!");
+          setModalState({
+            isOpen: true,
+            title: 'Success',
+            message: 'Hostel information updated successfully!',
+            type: 'info',
+            showCancel: false,
+            showConfirm: true,
+            confirmText: 'OK',
+            onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+          });
           // Refresh data from backend to ensure UI shows latest data
           console.log("Refreshing data after update...");
           const refreshResult = await refreshHostelData();
@@ -567,13 +617,31 @@ const Settings = () => {
             console.error("Failed to refresh data after update:", refreshResult.error);
           }
         } else {
-          alert(`Error updating hostel: ${result.error?.message || result.error}`);
+          setModalState({
+            isOpen: true,
+            title: 'Update Failed',
+            message: `Error updating hostel: ${result.error?.message || result.error}`,
+            type: 'danger',
+            showCancel: false,
+            showConfirm: true,
+            confirmText: 'OK',
+            onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+          });
           return;
         }
       } else {
         result = await createHostel(payload);
         if (result.success) {
-          alert("Hostel created successfully!");
+          setModalState({
+            isOpen: true,
+            title: 'Success',
+            message: 'Hostel created successfully!',
+            type: 'info',
+            showCancel: false,
+            showConfirm: true,
+            confirmText: 'OK',
+            onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+          });
           // Refresh data from backend to ensure UI shows latest data
           console.log("Refreshing data after creation...");
           const refreshResult = await refreshHostelData();
@@ -583,7 +651,16 @@ const Settings = () => {
             console.error("Failed to refresh data after creation:", refreshResult.error);
           }
         } else {
-          alert(`Error creating hostel: ${result.error?.message || result.error}`);
+          setModalState({
+            isOpen: true,
+            title: 'Creation Failed',
+            message: `Error creating hostel: ${result.error?.message || result.error}`,
+            type: 'danger',
+            showCancel: false,
+            showConfirm: true,
+            confirmText: 'OK',
+            onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+          });
           return;
         }
       }
@@ -593,7 +670,16 @@ const Settings = () => {
       setCurrentSlide(0);
     } catch (error) {
       console.error('Error submitting hostel data:', error);
-      alert(`Error submitting hostel data: ${error.message}`);
+      setModalState({
+        isOpen: true,
+        title: 'Submission Error',
+        message: `Error submitting hostel data: ${error.message}`,
+        type: 'danger',
+        showCancel: false,
+        showConfirm: true,
+        confirmText: 'OK',
+        onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+      });
     }
   };
 
@@ -605,6 +691,7 @@ const Settings = () => {
     setGeneralAmenities([]);
     setRoomDetails([]);
     setAdditionalInfo([]);
+    setTermsAccepted(false);
   };
 
   const editHostelInfo = () => {
@@ -613,14 +700,28 @@ const Settings = () => {
   };
 
   const handleDeleteHostel = () => {
-    if (
-      confirm(
-        "Are you sure you want to delete this hostel? This action cannot be undone."
-      )
-    ) {
-      deleteHostel();
-      alert("Hostel deleted successfully!");
-    }
+    setModalState({
+      isOpen: true,
+      title: 'Delete Hostel',
+      message: 'Are you sure you want to delete this hostel? This action cannot be undone.',
+      type: 'danger',
+      showCancel: true,
+      showConfirm: true,
+      confirmText: 'Delete',
+      onConfirm: () => {
+        deleteHostel();
+        setModalState({
+          isOpen: true,
+          title: 'Deleted',
+          message: 'Hostel deleted successfully!',
+          type: 'info',
+          showCancel: false,
+          showConfirm: true,
+          confirmText: 'OK',
+          onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+        });
+      },
+    });
   };
 
   const handleBankingDetailsSave = (details) => {
@@ -656,6 +757,28 @@ const Settings = () => {
                 ? "Update your hostel information below"
                 : "Complete the form below to set up your hostel"
             }
+          />
+          {/* Global modal for this page */}
+          <ConfirmationModal
+            isOpen={modalState.isOpen}
+            onClose={() => setModalState((s) => ({ ...s, isOpen: false }))}
+            onConfirm={() => {
+              if (typeof modalState.onConfirm === 'function') {
+                const cb = modalState.onConfirm;
+                // Close current modal first for UX
+                setModalState((s) => ({ ...s, isOpen: false }));
+                cb();
+              } else {
+                setModalState((s) => ({ ...s, isOpen: false }));
+              }
+            }}
+            title={modalState.title}
+            message={modalState.message}
+            type={modalState.type}
+            isLoading={false}
+            showCancel={modalState.showCancel}
+            showConfirm={modalState.showConfirm}
+            confirmText={modalState.confirmText}
           />
           
           {/* Progress Save Indicator */}
@@ -718,8 +841,19 @@ const Settings = () => {
                   </div>
                 )}
 
-                {/* Slide 4: Submission Component */}
+                {/* Slide 4: Terms and Conditions */}
                 {currentSlide === 3 && (
+                  <div className="slide-content-modern">
+                    <TermsAndConditions
+                      accepted={termsAccepted}
+                      onAccept={() => setTermsAccepted(true)}
+                      onDecline={() => setTermsAccepted(false)}
+                    />
+                  </div>
+                )}
+
+                {/* Slide 5: Submission Component */}
+                {currentSlide === 4 && (
                   <div className="slide-content-modern">
                     <SubmissionTab
                       hostelDetails={hostelDetails}
@@ -740,6 +874,9 @@ const Settings = () => {
                 onNextSlide={nextSlide}
                 onSubmit={handleSubmit}
                 hasHostel={hasHostel}
+                lastSlideIndex={4}
+                disableNext={currentSlide === 3 && !termsAccepted}
+                disableSubmit={false}
               />
             </div>
           </form>
@@ -771,6 +908,29 @@ const Settings = () => {
           onDelete={handleDeleteHostel}
           onRefresh={handleRefresh}
           isRefreshing={isRefreshing}
+        />
+
+        {/* Global modal for this page */}
+        <ConfirmationModal
+          isOpen={modalState.isOpen}
+          onClose={() => setModalState((s) => ({ ...s, isOpen: false }))}
+          onConfirm={() => {
+            if (typeof modalState.onConfirm === 'function') {
+              const cb = modalState.onConfirm;
+              // Close current modal first for UX
+              setModalState((s) => ({ ...s, isOpen: false }));
+              cb();
+            } else {
+              setModalState((s) => ({ ...s, isOpen: false }));
+            }
+          }}
+          title={modalState.title}
+          message={modalState.message}
+          type={modalState.type}
+          isLoading={false}
+          showCancel={modalState.showCancel}
+          showConfirm={modalState.showConfirm}
+          confirmText={modalState.confirmText}
         />
 
         <div className="settings-content-modern">

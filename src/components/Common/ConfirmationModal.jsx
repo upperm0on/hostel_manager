@@ -11,7 +11,9 @@ const ConfirmationModal = ({
   confirmText = 'Confirm',
   cancelText = 'Cancel',
   type = 'warning',
-  isLoading = false
+  isLoading = false,
+  showCancel = true,
+  showConfirm = true
 }) => {
   if (!isOpen) return null;
 
@@ -67,29 +69,33 @@ const ConfirmationModal = ({
 
         {/* Modal Actions */}
         <div className="modal-actions">
-          <button
-            type="button"
-            className="btn btn-outline"
-            onClick={handleClose}
-            disabled={isLoading}
-          >
-            {cancelText}
-          </button>
-          <button
-            type="button"
-            className={`btn btn-${type === 'danger' ? 'danger' : 'primary'}`}
-            onClick={handleConfirm}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <div className="spinner"></div>
-                Processing...
-              </>
-            ) : (
-              confirmText
-            )}
-          </button>
+          {showCancel && (
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={handleClose}
+              disabled={isLoading}
+            >
+              {cancelText}
+            </button>
+          )}
+          {showConfirm && (
+            <button
+              type="button"
+              className={`btn btn-${type === 'danger' ? 'danger' : 'primary'}`}
+              onClick={handleConfirm}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <div className="spinner"></div>
+                  Processing...
+                </>
+              ) : (
+                confirmText
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>

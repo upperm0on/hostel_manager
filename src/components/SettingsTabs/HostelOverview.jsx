@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_ENDPOINTS } from '../../config/api';
+import { toNetFromGross } from '../../utils/priceUtils';
 import { 
   Building, 
   Home, 
@@ -252,7 +253,7 @@ const HostelOverview = ({ hostelInfo }) => {
   const totalCapacity = roomDetails?.reduce((sum, room) => sum + (parseInt(room.number_of_rooms) * parseInt(room.number_in_room) || 0), 0) || 0;
   const totalAmenities = generalAmenities?.filter(item => item.value.trim()).length || 0;
   const averageRoomPrice = roomDetails?.length > 0 
-    ? roomDetails.reduce((sum, room) => sum + (parseInt(room.price) || 0), 0) / roomDetails.length 
+    ? roomDetails.reduce((sum, room) => sum + (toNetFromGross(room.price) || 0), 0) / roomDetails.length 
     : 0;
 
   // Calculate real metrics based on tenant data
@@ -362,7 +363,7 @@ const HostelOverview = ({ hostelInfo }) => {
               <div className="hero-stat-label">Occupancy</div>
             </div>
             <div className="hero-stat-item">
-              <div className="hero-stat-value">${Math.round(totalRevenue).toLocaleString()}</div>
+              <div className="hero-stat-value">₵{Math.round(totalRevenue).toLocaleString()}</div>
               <div className="hero-stat-label">Revenue</div>
             </div>
           </div>
@@ -476,8 +477,8 @@ const HostelOverview = ({ hostelInfo }) => {
               </div>
             </div>
             <div className="metric-content-modern">
-              <div className="metric-number-modern">${Math.round(metrics.revenue.current).toLocaleString()}</div>
-              <div className="metric-label-modern">Monthly Revenue</div>
+              <div className="metric-number-modern">₵{Math.round(metrics.revenue.current).toLocaleString()}</div>
+              <div className="metric-label-modern">Yearly Revenue</div>
               <div className="metric-subtitle-modern">
                 {getTrendText(metrics.revenue)}
               </div>
@@ -550,7 +551,7 @@ const HostelOverview = ({ hostelInfo }) => {
                       ></div>
                     </div>
                     <div className="distribution-details-modern">
-                      <span className="price-modern">${parseInt(room.price).toLocaleString()}/month</span>
+                      <span className="price-modern">₵{toNetFromGross(room.price).toLocaleString()}/year</span>
                       <span className="occupancy-modern">{occupiedRooms} occupied, {availableRooms} available</span>
                     </div>
                   </div>
@@ -564,15 +565,15 @@ const HostelOverview = ({ hostelInfo }) => {
             {roomDetails?.map((room, index) => {
             const roomCapacity = parseInt(room.number_in_room) || 0;
             const roomCount = parseInt(room.number_of_rooms) || 0;
-            const roomPrice = parseInt(room.price) || 0;
+            const roomPrice = toNetFromGross(room.price) || 0;
             const totalCapacityForRoom = roomCapacity * roomCount;
             
-            // Handle mixed gender configuration
-            const maleRooms = parseInt(room.gender?.male) || 0;
-            const femaleRooms = parseInt(room.gender?.female) || 0;
+            // Handle mixed gender configuration - support both data structures
+            const maleRooms = parseInt(room.gender?.male || room.male_rooms) || 0;
+            const femaleRooms = parseInt(room.gender?.female || room.female_rooms) || 0;
             const totalGenderRooms = maleRooms + femaleRooms;
-            const isMixed = maleRooms > 0 && femaleRooms > 0;
-            const genderType = isMixed ? 'Mixed' : (maleRooms > 0 ? 'Male' : 'Female');
+            const isMixed = room.gender === 'mixed' && maleRooms > 0 && femaleRooms > 0;
+            const genderType = room.gender === 'male' ? 'Male' : (room.gender === 'female' ? 'Female' : 'Mixed');
             
             return (
               <div key={index} className="section-card-modern room-type-section">
@@ -595,8 +596,8 @@ const HostelOverview = ({ hostelInfo }) => {
                 <div className="room-type-content">
                   <div className="room-type-overview">
                     <div className="overview-item">
-                      <span className="overview-label">Price per Month</span>
-                      <span className="overview-value">${roomPrice.toLocaleString()}</span>
+                      <span className="overview-label">Price per Year</span>
+                      <span className="overview-value">₵{roomPrice.toLocaleString()}</span>
                     </div>
                     <div className="overview-item">
                       <span className="overview-label">Total Capacity</span>
@@ -615,7 +616,7 @@ const HostelOverview = ({ hostelInfo }) => {
                       <span>Gender Allocation</span>
                     </div>
                     <div className="gender-grid-modern">
-                      {isMixed ? (
+                      {room.gender === 'mixed' ? (
                         <>
                           <div className="gender-item-modern male">
                             <div className="gender-icon-modern">♂</div>
@@ -632,16 +633,40 @@ const HostelOverview = ({ hostelInfo }) => {
                             </div>
                           </div>
                         </>
-                      ) : (
-                        <div className={`gender-item-modern ${genderType.toLowerCase()}`}>
-                          <div className="gender-icon-modern">
-                            {genderType === 'Male' ? '♂' : '♀'}
-                          </div>
+                      ) : room.gender === 'male' ? (
+                        <div className="gender-item-modern male">
+                          <div className="gender-icon-modern">♂</div>
                           <div className="gender-content-modern">
-                            <div className="gender-value-modern">{totalGenderRooms}</div>
-                            <div className="gender-label-modern">{genderType} Rooms</div>
+                            <div className="gender-value-modern">{maleRooms}</div>
+                            <div className="gender-label-modern">Male Rooms</div>
                           </div>
                         </div>
+                      ) : room.gender === 'female' ? (
+                        <div className="gender-item-modern female">
+                          <div className="gender-icon-modern">♀</div>
+                          <div className="gender-content-modern">
+                            <div className="gender-value-modern">{femaleRooms}</div>
+                            <div className="gender-label-modern">Female Rooms</div>
+                          </div>
+                        </div>
+                      ) : (
+                        // Fallback for undefined gender - show as mixed with current values
+                        <>
+                          <div className="gender-item-modern male">
+                            <div className="gender-icon-modern">♂</div>
+                            <div className="gender-content-modern">
+                              <div className="gender-value-modern">{maleRooms}</div>
+                              <div className="gender-label-modern">Male Rooms</div>
+                            </div>
+                          </div>
+                          <div className="gender-item-modern female">
+                            <div className="gender-icon-modern">♀</div>
+                            <div className="gender-content-modern">
+                              <div className="gender-value-modern">{femaleRooms}</div>
+                              <div className="gender-label-modern">Female Rooms</div>
+                            </div>
+                          </div>
+                        </>
                       )}
                     </div>
                   </div>

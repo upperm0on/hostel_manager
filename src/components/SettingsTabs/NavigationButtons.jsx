@@ -7,7 +7,10 @@ const NavigationButtons = ({
   onPrevSlide, 
   onNextSlide, 
   onSubmit, 
-  hasHostel 
+  hasHostel,
+  lastSlideIndex = 3,
+  disableNext = false,
+  disableSubmit = false,
 }) => {
   return (
     <div className="navigation-buttons">
@@ -22,11 +25,12 @@ const NavigationButtons = ({
         </button>
       )}
       
-      {currentSlide < 3 ? (
+      {currentSlide < lastSlideIndex ? (
         <button
           type="button"
           className="btn btn-primary"
           onClick={onNextSlide}
+          disabled={disableNext}
         >
           Next
           <ArrowRight size={20} />
@@ -36,6 +40,7 @@ const NavigationButtons = ({
           type="submit"
           className="btn btn-primary"
           onClick={onSubmit}
+          disabled={disableSubmit}
         >
           <CheckCircle size={20} />
           {hasHostel ? 'Update Hostel Information' : 'Submit Hostel Information'}

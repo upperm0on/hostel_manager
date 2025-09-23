@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { User, Eye, EyeOff, Lock } from "lucide-react";
+import { Mail, Eye, EyeOff, Lock } from "lucide-react";
 import { API_ENDPOINTS } from "../../config/api";
 import "../../assets/css/Login/SignUpForms.css";
 
@@ -15,12 +15,23 @@ function LoginForms() {
 
     async function handleLogin(e) {
     e.preventDefault();
+<<<<<<< HEAD
     const email = e.target.querySelector("#name").value;
+=======
+    const email = e.target.querySelector("#email").value;
+>>>>>>> 2a3edf0 (email verification changes)
     const password = e.target.querySelector("#password").value;
     const username = email;
 
-    if (!username || !password) {
-      setError("Please enter both username and password");
+    if (!email || !password) {
+      setError("Please enter both email and password");
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address");
       return;
     }
 
@@ -36,7 +47,7 @@ function LoginForms() {
 
       if (!res.ok) {
         if (res.status === 401) {
-          throw new Error("Invalid username or password");
+          throw new Error("Invalid email or password");
         } else if (res.status === 500) {
           throw new Error("Server error. Please try again later.");
         } else if (res.status === 404) {
@@ -69,12 +80,12 @@ function LoginForms() {
       {error && <p className="error-message">{error}</p>}
 
       <div className="sign_up-item">
-        <label htmlFor="name">
+        <label htmlFor="email">
           <div className="label_container">
-            <User size={20} />
+            <Mail size={20} />
           </div>
         </label>
-        <input type="text" id="name" placeholder="Name" autoFocus required />
+        <input type="email" id="email" placeholder="Email Address" autoFocus required />
       </div>
 
       <div className="sign_up-item">

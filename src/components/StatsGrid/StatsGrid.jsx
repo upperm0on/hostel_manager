@@ -69,7 +69,7 @@ const StatsGrid = ({ variant = 'dashboard', hostelInfo }) => {
     },
     {
       icon: DollarSign,
-      title: 'Monthly Revenue',
+      title: 'Yearly Revenue',
       value: `₵${stats.monthlyRevenue.toLocaleString()}`,
       change: getChangeValue(stats.monthlyRevenue, previousStats.monthlyRevenue, true),
       changeType: getChangeType(stats.monthlyRevenue, previousStats.monthlyRevenue),

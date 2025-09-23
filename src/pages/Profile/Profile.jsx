@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import BankingAlert from '../../components/Common/BankingAlert';
 import { validateEmailRealTime, sanitizeEmail } from '../../utils/emailValidation';
+import ConfirmationModal from '../../components/Common/ConfirmationModal';
 import './Profile.css';
 
 const Profile = () => {
@@ -29,6 +30,16 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingPassword, setIsEditingPassword] = useState(false);
   const [isEditingNotifications, setIsEditingNotifications] = useState(false);
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    showCancel: false,
+    showConfirm: true,
+    confirmText: 'OK',
+    onConfirm: null,
+  });
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -181,13 +192,31 @@ const Profile = () => {
       console.log('Profile updated successfully');
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Failed to update profile. Please try again.');
+      setModalState({
+        isOpen: true,
+        title: 'Update Failed',
+        message: 'Failed to update profile. Please try again.',
+        type: 'danger',
+        showCancel: false,
+        showConfirm: true,
+        confirmText: 'OK',
+        onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+      });
     }
   };
 
   const handlePasswordSave = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert('New passwords do not match');
+      setModalState({
+        isOpen: true,
+        title: 'Password Mismatch',
+        message: 'New passwords do not match',
+        type: 'warning',
+        showCancel: false,
+        showConfirm: true,
+        confirmText: 'OK',
+        onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+      });
       return;
     }
     
@@ -202,7 +231,16 @@ const Profile = () => {
       });
     } catch (error) {
       console.error('Error updating password:', error);
-      alert('Failed to update password. Please try again.');
+      setModalState({
+        isOpen: true,
+        title: 'Update Failed',
+        message: 'Failed to update password. Please try again.',
+        type: 'danger',
+        showCancel: false,
+        showConfirm: true,
+        confirmText: 'OK',
+        onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+      });
     }
   };
 
@@ -213,7 +251,16 @@ const Profile = () => {
       setIsEditingNotifications(false);
     } catch (error) {
       console.error('Error updating notification settings:', error);
-      alert('Failed to update notification settings. Please try again.');
+      setModalState({
+        isOpen: true,
+        title: 'Update Failed',
+        message: 'Failed to update notification settings. Please try again.',
+        type: 'danger',
+        showCancel: false,
+        showConfirm: true,
+        confirmText: 'OK',
+        onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+      });
     }
   };
 
@@ -245,6 +292,26 @@ const Profile = () => {
 
   return (
     <div className="profile-page">
+      <ConfirmationModal
+        isOpen={modalState.isOpen}
+        onClose={() => setModalState((s) => ({ ...s, isOpen: false }))}
+        onConfirm={() => {
+          if (typeof modalState.onConfirm === 'function') {
+            const cb = modalState.onConfirm;
+            setModalState((s) => ({ ...s, isOpen: false }));
+            cb();
+          } else {
+            setModalState((s) => ({ ...s, isOpen: false }));
+          }
+        }}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+        isLoading={false}
+        showCancel={modalState.showCancel}
+        showConfirm={modalState.showConfirm}
+        confirmText={modalState.confirmText}
+      />
       <BankingAlert onComplete={handleCompleteBanking} />
       
       {/* Profile Header */}

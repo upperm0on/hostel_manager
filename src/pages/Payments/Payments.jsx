@@ -5,6 +5,7 @@ import { DollarSign, Plus } from 'lucide-react';
 import { PaymentSummary, PaymentFilters, PaymentModal } from '../../components/PaymentComponents';
 import PaymentTable from '../../components/PaymentTable/PaymentTable';
 import BankingAlert from '../../components/Common/BankingAlert';
+import ConfirmationModal from '../../components/Common/ConfirmationModal';
 import './Payments.css';
 
 const Payments = () => {
@@ -14,6 +15,16 @@ const Payments = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [editingPayment, setEditingPayment] = useState(null);
   const [modalMode, setModalMode] = useState('add');
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    showCancel: false,
+    showConfirm: true,
+    confirmText: 'OK',
+    onConfirm: null,
+  });
 
   const handleCompleteBanking = () => {
     navigate('/settings?tab=banking');
@@ -162,7 +173,16 @@ const Payments = () => {
       console.log('Payment report exported successfully');
     } catch (error) {
       console.error('Error exporting report:', error);
-      alert('Failed to export report. Please try again.');
+      setModalState({
+        isOpen: true,
+        title: 'Export Failed',
+        message: 'Failed to export report. Please try again.',
+        type: 'danger',
+        showCancel: false,
+        showConfirm: true,
+        confirmText: 'OK',
+        onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+      });
     }
   };
 
@@ -247,6 +267,26 @@ const Payments = () => {
 
   return (
     <div className="payments-page">
+      <ConfirmationModal
+        isOpen={modalState.isOpen}
+        onClose={() => setModalState((s) => ({ ...s, isOpen: false }))}
+        onConfirm={() => {
+          if (typeof modalState.onConfirm === 'function') {
+            const cb = modalState.onConfirm;
+            setModalState((s) => ({ ...s, isOpen: false }));
+            cb();
+          } else {
+            setModalState((s) => ({ ...s, isOpen: false }));
+          }
+        }}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+        isLoading={false}
+        showCancel={modalState.showCancel}
+        showConfirm={modalState.showConfirm}
+        confirmText={modalState.confirmText}
+      />
       <BankingAlert onComplete={handleCompleteBanking} />
       <div className="page-header">
         <div className="page-header-content">

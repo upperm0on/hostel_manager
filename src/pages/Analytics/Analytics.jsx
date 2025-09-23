@@ -3,6 +3,7 @@ import { useHostel } from '../../contexts/HostelContext';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from '../../config/api';
 import StatsGrid from '../../components/StatsGrid/StatsGrid';
+import { toNetFromGross } from '../../utils/priceUtils';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -112,7 +113,9 @@ const Analytics = () => {
   const roomTypeStats = Array.isArray(hostelInfo?.room_details) 
     ? hostelInfo.room_details.map(room => {
         const roomCapacity = parseInt(room.number_of_rooms || 0) * parseInt(room.number_in_room || 0);
-        const roomRevenue = parseFloat(room.price || 0) * parseInt(room.number_of_rooms || 0);
+        // Convert gross to net for manager display
+        const netPrice = toNetFromGross(room.price || 0);
+        const roomRevenue = parseFloat(netPrice || 0) * parseInt(room.number_of_rooms || 0);
         
         // Calculate how many tenants are in this room type
         const tenantsInThisRoomType = tenants.filter(tenant => {
@@ -129,7 +132,7 @@ const Analytics = () => {
           type: `${room.number_in_room}-person room`,
           capacity: roomCapacity,
           revenue: roomRevenue,
-          price: parseFloat(room.price || 0),
+          price: parseFloat(netPrice || 0),
           rooms: parseInt(room.number_of_rooms || 0),
           occupied: roomTypeOccupancy,
           occupancy: Math.min(100, roomTypeOccupancyRate)
@@ -347,7 +350,7 @@ const Analytics = () => {
                 <div key={index} className="room-type-card">
                   <div className="room-type-header">
                     <h4>{roomType.type}</h4>
-                    <span className="room-type-price">₵{roomType.price}/month</span>
+                    <span className="room-type-price">₵{roomType.price}/year</span>
                   </div>
                   <div className="room-type-stats">
                     <div className="stat-item">

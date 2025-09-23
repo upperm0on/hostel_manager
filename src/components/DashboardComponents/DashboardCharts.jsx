@@ -1,8 +1,19 @@
 import React from 'react';
 import { TrendingUp, TrendingDown, Download } from 'lucide-react';
+import ConfirmationModal from '../Common/ConfirmationModal';
 import './DashboardCharts.css';
 
 const DashboardCharts = () => {
+  const [modalState, setModalState] = React.useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    showCancel: false,
+    showConfirm: true,
+    confirmText: 'OK',
+    onConfirm: null,
+  });
   // Mock data for charts
   const occupancyData = [82, 85, 87, 89, 87, 90, 92];
   const revenueData = [42000, 43500, 45600, 47800, 45600, 49000, 52000];
@@ -30,6 +41,26 @@ const DashboardCharts = () => {
 
   return (
     <div className="dashboard-charts">
+      <ConfirmationModal
+        isOpen={modalState.isOpen}
+        onClose={() => setModalState((s) => ({ ...s, isOpen: false }))}
+        onConfirm={() => {
+          if (typeof modalState.onConfirm === 'function') {
+            const cb = modalState.onConfirm;
+            setModalState((s) => ({ ...s, isOpen: false }));
+            cb();
+          } else {
+            setModalState((s) => ({ ...s, isOpen: false }));
+          }
+        }}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+        isLoading={false}
+        showCancel={modalState.showCancel}
+        showConfirm={modalState.showConfirm}
+        confirmText={modalState.confirmText}
+      />
       <div className="charts-header">
         <div className="charts-title">
           <h3>Performance Trends</h3>
@@ -66,7 +97,16 @@ const DashboardCharts = () => {
               console.log('Performance trends exported successfully');
             } catch (error) {
               console.error('Error exporting trends:', error);
-              alert('Failed to export trends. Please try again.');
+              setModalState({
+                isOpen: true,
+                title: 'Export Failed',
+                message: 'Failed to export trends. Please try again.',
+                type: 'danger',
+                showCancel: false,
+                showConfirm: true,
+                confirmText: 'OK',
+                onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+              });
             }
           }}
         >
@@ -90,7 +130,16 @@ const DashboardCharts = () => {
                 const details = occupancyData.map((value, index) => 
                   `${labels[index]}: ${value}%`
                 ).join('\n');
-                alert(`Occupancy Rate Details:\n\n${details}\n\nAverage: ${Math.round(occupancyData.reduce((a, b) => a + b, 0) / occupancyData.length)}%`);
+                setModalState({
+                  isOpen: true,
+                  title: 'Occupancy Rate Details',
+                  message: `${details}\n\nAverage: ${Math.round(occupancyData.reduce((a, b) => a + b, 0) / occupancyData.length)}%`,
+                  type: 'info',
+                  showCancel: false,
+                  showConfirm: true,
+                  confirmText: 'Close',
+                  onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+                });
               }}
               title="View Details"
             >
@@ -109,7 +158,16 @@ const DashboardCharts = () => {
                         backgroundColor: getBarColor(value, maxOccupancy)
                       }}
                       onClick={() => {
-                        alert(`Week ${index + 1} Details:\n\nOccupancy Rate: ${value}%\nStatus: ${value >= 90 ? 'Excellent' : value >= 80 ? 'Good' : 'Needs Attention'}\nTrend: ${index > 0 ? (value > occupancyData[index - 1] ? '↗️ Up' : value < occupancyData[index - 1] ? '↘️ Down' : '→ Stable') : 'First Week'}`);
+                        setModalState({
+                          isOpen: true,
+                          title: `Week ${index + 1} Details`,
+                          message: `Occupancy Rate: ${value}%\nStatus: ${value >= 90 ? 'Excellent' : value >= 80 ? 'Good' : 'Needs Attention'}\nTrend: ${index > 0 ? (value > occupancyData[index - 1] ? '↗️ Up' : value < occupancyData[index - 1] ? '↘️ Down' : '→ Stable') : 'First Week'}`,
+                          type: 'info',
+                          showCancel: false,
+                          showConfirm: true,
+                          confirmText: 'Close',
+                          onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+                        });
                       }}
                       title={`Click for Week ${index + 1} details`}
                     ></div>
@@ -138,7 +196,16 @@ const DashboardCharts = () => {
                 const details = revenueData.map((value, index) => 
                   `${labels[index]}: $${(value / 1000).toFixed(1)}k`
                 ).join('\n');
-                alert(`Revenue Details:\n\n${details}\n\nTotal Growth: $${((revenueData[revenueData.length - 1] - revenueData[0]) / 1000).toFixed(1)}k`);
+                setModalState({
+                  isOpen: true,
+                  title: 'Revenue Details',
+                  message: `${details}\n\nTotal Growth: $${((revenueData[revenueData.length - 1] - revenueData[0]) / 1000).toFixed(1)}k`,
+                  type: 'info',
+                  showCancel: false,
+                  showConfirm: true,
+                  confirmText: 'Close',
+                  onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+                });
               }}
               title="View Details"
             >
@@ -157,7 +224,16 @@ const DashboardCharts = () => {
                         backgroundColor: getBarColor(value, maxRevenue, true)
                       }}
                       onClick={() => {
-                        alert(`Week ${index + 1} Details:\n\nRevenue: $${value.toLocaleString()}\nStatus: ${value >= 50000 ? 'Excellent' : value >= 40000 ? 'Good' : 'Needs Attention'}\nTrend: ${index > 0 ? (value > revenueData[index - 1] ? '↗️ Up' : value < revenueData[index - 1] ? '↘️ Down' : '→ Stable') : 'First Week'}`);
+                        setModalState({
+                          isOpen: true,
+                          title: `Week ${index + 1} Details`,
+                          message: `Revenue: $${value.toLocaleString()}\nStatus: ${value >= 50000 ? 'Excellent' : value >= 40000 ? 'Good' : 'Needs Attention'}\nTrend: ${index > 0 ? (value > revenueData[index - 1] ? '↗️ Up' : value < revenueData[index - 1] ? '↘️ Down' : '→ Stable') : 'First Week'}`,
+                          type: 'info',
+                          showCancel: false,
+                          showConfirm: true,
+                          confirmText: 'Close',
+                          onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+                        });
                       }}
                       title={`Click for Week ${index + 1} details`}
                     ></div>

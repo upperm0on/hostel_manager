@@ -1,10 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, ArrowRight } from 'lucide-react';
+import ConfirmationModal from '../Common/ConfirmationModal';
 import './DashboardComponents.css';
 
 const UpcomingEvents = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    showCancel: false,
+    showConfirm: true,
+    confirmText: 'Close',
+    onConfirm: null,
+  });
 
   // Generate upcoming events based on real data
   useEffect(() => {
@@ -49,6 +60,18 @@ const UpcomingEvents = () => {
 
   return (
     <div className="dashboard-section">
+      <ConfirmationModal
+        isOpen={modalState.isOpen}
+        onClose={() => setModalState((s) => ({ ...s, isOpen: false }))}
+        onConfirm={() => setModalState((s) => ({ ...s, isOpen: false }))}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+        isLoading={false}
+        showCancel={modalState.showCancel}
+        showConfirm={modalState.showConfirm}
+        confirmText={modalState.confirmText}
+      />
       <div className="section-header">
         <h3 className="section-title">Upcoming Events</h3>
         <button 
@@ -56,7 +79,16 @@ const UpcomingEvents = () => {
           onClick={() => {
             // Show calendar view or navigate to events page
             const eventList = events.map(e => `${e.date}: ${e.title}`).join('\n');
-            alert(`Upcoming Events:\n${eventList || 'No events scheduled'}`);
+            setModalState({
+              isOpen: true,
+              title: 'Upcoming Events',
+              message: eventList || 'No events scheduled',
+              type: 'info',
+              showCancel: false,
+              showConfirm: true,
+              confirmText: 'Close',
+              onConfirm: () => setModalState((s) => ({ ...s, isOpen: false })),
+            });
           }}
         >
           View Calendar
