@@ -13,13 +13,9 @@ function LoginForms() {
   const location = useLocation();
   const { login } = useAuth();
 
-    async function handleLogin(e) {
+  async function handleLogin(e) {
     e.preventDefault();
-<<<<<<< HEAD
-    const email = e.target.querySelector("#name").value;
-=======
     const email = e.target.querySelector("#email").value;
->>>>>>> 2a3edf0 (email verification changes)
     const password = e.target.querySelector("#password").value;
     const username = email;
 
