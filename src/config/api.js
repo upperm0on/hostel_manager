@@ -38,7 +38,7 @@ export const getApiUrl = (endpoint) => {
     return endpoint;
   }
   // Prepend localhost:8000 for development
-  return `http://localhost:8000${endpoint}`;
+  return endpoint;
 };
 
 // Default export for easy access
