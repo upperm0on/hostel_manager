@@ -522,19 +522,28 @@ const Settings = () => {
       ? roomDetails
       : savedProgressForSubmit?.roomDetails || roomDetails;
 
-    const mappedRooms = (effectiveRoomDetails || []).map((room) => {
+    const mappedRooms = (effectiveRoomDetails || []).map((room, index) => {
+      const prevRoom = Array.isArray(hostelInfo?.room_details) ? hostelInfo.room_details[index] : null;
       const numberInRoom = room.number_in_room === '' || room.number_in_room == null ? 0 : parseInt(room.number_in_room, 10);
       const numberOfRooms = room.number_of_rooms === '' || room.number_of_rooms == null ? 0 : parseInt(room.number_of_rooms, 10);
-      const priceStr = room.price == null || room.price === '' ? '0' : String(room.price);
+      const priceStr = (room.price == null || room.price === '')
+        ? (prevRoom?.price != null ? String(prevRoom.price) : '0')
+        : String(room.price);
       // Apply 4% service fee to the saved price so backend receives the gross amount
       const basePrice = parseFloat(priceStr);
       const priceWithFee = isNaN(basePrice)
         ? '0'
         : (Math.round(basePrice * 1.04 * 100) / 100).toFixed(2);
       // Normalize gender allocations based on selected gender - support both data structures
-      let maleRooms = room.gender?.male !== undefined ? parseInt(room.gender.male, 10) : (room.male_rooms === '' || room.male_rooms == null ? 0 : parseInt(room.male_rooms, 10));
-      let femaleRooms = room.gender?.female !== undefined ? parseInt(room.gender.female, 10) : (room.female_rooms === '' || room.female_rooms == null ? 0 : parseInt(room.female_rooms, 10));
-      const genderSelection = room.gender;
+      let maleRooms = room.gender?.male !== undefined ? parseInt(room.gender.male, 10)
+        : (room.male_rooms === '' || room.male_rooms == null
+          ? (prevRoom?.gender?.male != null ? parseInt(prevRoom.gender.male, 10) : 0)
+          : parseInt(room.male_rooms, 10));
+      let femaleRooms = room.gender?.female !== undefined ? parseInt(room.gender.female, 10)
+        : (room.female_rooms === '' || room.female_rooms == null
+          ? (prevRoom?.gender?.female != null ? parseInt(prevRoom.gender.female, 10) : 0)
+          : parseInt(room.female_rooms, 10));
+      const genderSelection = room.gender || (prevRoom?.gender ? (prevRoom.gender.male && !prevRoom.gender.female ? 'male' : prevRoom.gender.female && !prevRoom.gender.male ? 'female' : 'mixed') : undefined);
       if (genderSelection === 'male') {
         maleRooms = isNaN(numberOfRooms) ? 0 : numberOfRooms;
         femaleRooms = 0;
@@ -562,7 +571,18 @@ const Settings = () => {
         ? safeAmenities(room.amenities)
         : typeof room.amenities === 'string'
         ? room.amenities
-        : '[]';
+        : (typeof prevRoom?.amenities === 'string' ? prevRoom.amenities : safeAmenities(prevRoom?.amenities || []));
+
+      // Compute room_image with fallback: use File if selected, else keep existing string/URL from prevRoom
+      let roomImageOut = null;
+      if (room.room_image instanceof File) {
+        roomImageOut = room.room_image;
+      } else if (typeof room.room_image === 'string' && room.room_image.trim() !== '') {
+        // Do not send base64 data URLs
+        roomImageOut = room.room_image.startsWith('data:') ? null : room.room_image;
+      } else if (prevRoom?.room_image) {
+        roomImageOut = prevRoom.room_image;
+      }
 
       return {
         number_in_room: isNaN(numberInRoom) ? 0 : numberInRoom,
@@ -573,21 +593,24 @@ const Settings = () => {
           female: isNaN(femaleRooms) ? 0 : femaleRooms,
         },
         amenities: amenitiesStr,
-        room_image: room.room_image || null,
-        room_label: room.room_label || '',
+        room_image: roomImageOut || null,
+        room_label: (room.room_label && room.room_label.trim() !== '') ? room.room_label : (prevRoom?.room_label || ''),
+        uuid: room.room_uuid || room.uuid || prevRoom?.uuid || undefined,
       };
     });
 
     const campusValue = typeof effectiveHostelDetails?.location === 'string'
       ? effectiveHostelDetails.location
-      : (effectiveHostelDetails?.location?.campus || '');
+      : (effectiveHostelDetails?.location?.campus || hostelInfo?.campus?.campus || '');
 
     const payload = {
-      name: effectiveHostelDetails?.name || '',
+      name: (effectiveHostelDetails?.name && effectiveHostelDetails.name.trim() !== '') ? effectiveHostelDetails.name : (hostelInfo?.name || ''),
       campus: campusValue,
-      additional_details: safeAmenities(generalAmenities),
-      room_details: mappedRooms, // send as array, not JSON string
-      image: effectiveHostelDetails?.logo || null,
+      additional_details: safeAmenities(generalAmenities.length ? generalAmenities : (Array.isArray(hostelInfo?.additional_details) ? hostelInfo.additional_details : [])),
+      room_details: mappedRooms, // array; context will convert to JSON for multipart
+      image: (effectiveHostelDetails?.logo instanceof File)
+        ? effectiveHostelDetails.logo
+        : (effectiveHostelDetails?.logo || hostelInfo?.image || null),
     };
 
     console.log('Submitting hostel payload:', payload);

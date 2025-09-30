@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { API_ENDPOINTS } from '../config/api';
+import { API_ENDPOINTS, getApiUrl } from '../config/api';
 import { useAuth } from './AuthContext';
 
 // Create context for hostel state
@@ -181,14 +181,78 @@ export const HostelProvider = ({ children }) => {
       
       console.log('Sending data to backend:', backendData);
       
-      const response = await fetch(API_ENDPOINTS.HOSTEL_CREATE, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(backendData)
-      });
+      // Build request depending on whether we have a file
+      let response;
+      const hasHostelImageBlob = backendData && backendData.image && (backendData.image instanceof Blob);
+      const hasRoomImageBlob = Array.isArray(backendData.room_details) && backendData.room_details.some(r => r && (r.room_image instanceof Blob));
+      if (hasHostelImageBlob || hasRoomImageBlob) {
+        const formData = new FormData();
+        formData.append('name', backendData.name ?? '');
+        formData.append('campus', backendData.campus ?? '');
+        formData.append('additional_details', backendData.additional_details ?? '[]');
+        // Prepare room_details JSON, extracting any File objects
+        const roomImages = [];
+        const sanitizedRooms = (backendData.room_details ?? []).map((room, idx) => {
+          const copy = { ...room };
+          if (copy.room_image instanceof Blob) {
+            roomImages.push({ index: idx, file: copy.room_image, uuid: copy.uuid });
+            // Put filename in JSON so backend can correlate
+            copy.room_image = copy.room_image.name || 'uploaded_image';
+          } else if (typeof copy.room_image === 'string' && copy.room_image.startsWith('data:')) {
+            // Never send base64; let backend keep existing if any
+            copy.room_image = '';
+          }
+          return copy;
+        });
+        formData.append('room_details', JSON.stringify(sanitizedRooms));
+        // Append image file for hostel if present
+        if (backendData.image instanceof Blob) {
+          formData.append('image', backendData.image);
+        }
+        // Append room image files with indexed keys
+        roomImages.forEach(({ index, file, uuid }) => {
+          // generic collection
+          formData.append(`room_images[${index}]`, file);
+          // nested key aligned with room_details structure
+          formData.append(`room_details[${index}][room_image]`, file);
+          // uuid-based key if available
+          if (uuid) {
+            formData.append(`room_images_by_uuid[${uuid}]`, file);
+          }
+        });
+
+        response = await fetch(getApiUrl(API_ENDPOINTS.HOSTEL_CREATE), {
+          method: 'POST',
+          headers: {
+            'Authorization': `Token ${token}`,
+            // no Content-Type for FormData
+          },
+          body: formData
+        });
+      } else {
+        // JSON path: strip any base64 data URLs so we don't send them
+        const payload = { ...backendData };
+        if (typeof payload.image === 'string' && payload.image.startsWith('data:')) {
+          payload.image = '';
+        }
+        if (Array.isArray(payload.room_details)) {
+          payload.room_details = payload.room_details.map((room) => {
+            const copy = { ...room };
+            if (typeof copy.room_image === 'string' && copy.room_image.startsWith('data:')) {
+              copy.room_image = '';
+            }
+            return copy;
+          });
+        }
+        response = await fetch(getApiUrl(API_ENDPOINTS.HOSTEL_CREATE), {
+          method: 'POST',
+          headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload)
+        });
+      }
 
       if (response.ok) {
         const result = await response.json();
@@ -224,14 +288,55 @@ export const HostelProvider = ({ children }) => {
       
       console.log('Sending data to backend:', backendData);
       
-      const response = await fetch(API_ENDPOINTS.HOSTEL_CREATE, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(backendData)
-      });
+      // Build request depending on whether we have a file
+      let response;
+      const hasHostelImageBlobUpd = backendData && backendData.image && (backendData.image instanceof Blob);
+      const hasRoomImageBlobUpd = Array.isArray(backendData.room_details) && backendData.room_details.some(r => r && (r.room_image instanceof Blob));
+      if (hasHostelImageBlobUpd || hasRoomImageBlobUpd) {
+        const formData = new FormData();
+        formData.append('name', backendData.name ?? '');
+        formData.append('campus', backendData.campus ?? '');
+        formData.append('additional_details', backendData.additional_details ?? '[]');
+        const roomImages = [];
+        const sanitizedRooms = (backendData.room_details ?? []).map((room, idx) => {
+          const copy = { ...room };
+          if (copy.room_image instanceof Blob) {
+            roomImages.push({ index: idx, file: copy.room_image, uuid: copy.uuid });
+            copy.room_image = copy.room_image.name || 'uploaded_image';
+          } else if (typeof copy.room_image === 'string' && copy.room_image.startsWith('data:')) {
+            copy.room_image = '';
+          }
+          return copy;
+        });
+        formData.append('room_details', JSON.stringify(sanitizedRooms));
+        if (backendData.image instanceof Blob) {
+          formData.append('image', backendData.image);
+        }
+        roomImages.forEach(({ index, file, uuid }) => {
+          formData.append(`room_images[${index}]`, file);
+          formData.append(`room_details[${index}][room_image]`, file);
+          if (uuid) {
+            formData.append(`room_images_by_uuid[${uuid}]`, file);
+          }
+        });
+
+        response = await fetch(getApiUrl(API_ENDPOINTS.HOSTEL_CREATE), {
+          method: 'POST',
+          headers: {
+            'Authorization': `Token ${token}`,
+          },
+          body: formData
+        });
+      } else {
+        response = await fetch(getApiUrl(API_ENDPOINTS.HOSTEL_CREATE), {
+          method: 'POST',
+          headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(backendData)
+        });
+      }
 
       if (response.ok) {
         const result = await response.json();
@@ -263,7 +368,7 @@ export const HostelProvider = ({ children }) => {
       const token = localStorage.getItem('token');
       
       // Try the update_or_create endpoint with GET first
-      let response = await fetch(API_ENDPOINTS.HOSTEL_GET, {
+      let response = await fetch(getApiUrl(API_ENDPOINTS.HOSTEL_GET), {
         method: 'GET',
         headers: {
           'Authorization': `Token ${token}`,
@@ -273,7 +378,7 @@ export const HostelProvider = ({ children }) => {
 
       // If that doesn't work, try a dedicated hostel endpoint
       if (!response.ok) {
-        response = await fetch(API_ENDPOINTS.HOSTEL_GET, {
+        response = await fetch(getApiUrl(API_ENDPOINTS.HOSTEL_GET), {
           method: 'GET',
           headers: {
             'Authorization': `Token ${token}`,

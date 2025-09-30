@@ -37,8 +37,8 @@ export const getApiUrl = (endpoint) => {
   if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
     return endpoint;
   }
-  // Return relative endpoint as-is (browser will resolve relative to current domain)
-  return endpoint;
+  // Prepend localhost:8000 for development
+  return `http://localhost:8000${endpoint}`;
 };
 
 // Default export for easy access

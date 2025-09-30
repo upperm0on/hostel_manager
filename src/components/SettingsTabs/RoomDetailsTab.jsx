@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Home, Plus, Users, DollarSign, Trash2, Settings, Edit3, Eye, EyeOff, Check, X, Upload, Image as ImageIcon, AlertTriangle } from 'lucide-react';
 import './SettingsTabs.css';
 import { getMinimumRoomsRequired } from '../../utils/roomUtils';
-import { API_ENDPOINTS } from '../../config/api';
+import { API_ENDPOINTS, getApiUrl } from '../../config/api';
 
 const RoomDetailsTab = ({ 
   roomDetails,
@@ -82,13 +82,12 @@ const RoomDetailsTab = ({
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch tenants data to validate room counts
   useEffect(() => {
     const fetchTenants = async () => {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
-        const response = await fetch(API_ENDPOINTS.TENANTS_LIST, {
+        const response = await fetch(getApiUrl(API_ENDPOINTS.TENANTS_LIST), {
           headers: {
             'Authorization': `Token ${token}`,
             'Content-Type': 'application/json',
@@ -655,10 +654,12 @@ const RoomDetailsTab = ({
                               <span className="image-upload-label">Room Image *</span>
                             </div>
                             <div className="image-upload-container">
-                              {room.room_image ? (
+                              {room.room_image || room.room_image_preview ? (
                                 <div className="image-preview-container">
                                   <img 
-                                    src={room.room_image} 
+                                    src={room.room_image_preview
+                                      ? room.room_image_preview
+                                      : (typeof room.room_image === 'string' ? room.room_image : '')}
                                     alt={`${room.number_in_room}-person room`}
                                     className="room-image-preview"
                                   />
@@ -674,7 +675,16 @@ const RoomDetailsTab = ({
                                     <button
                                       type="button"
                                       className="image-remove-btn"
-                                      onClick={() => onUpdateRoom(room.id, 'room_image', '')}
+                                      onClick={() => {
+                                        // revoke preview if exists
+                                        if (room.room_image_preview) {
+                                          try { URL.revokeObjectURL(room.room_image_preview); } catch (_) {}
+                                        }
+                                        onUpdateRoom(room.id, 'room_image', null);
+                                        onUpdateRoom(room.id, 'room_image_preview', '');
+                                        const input = document.getElementById(`room-image-${room.id}`);
+                                        if (input) input.value = '';
+                                      }}
                                     >
                                       <X size={16} />
                                     </button>
@@ -699,11 +709,13 @@ const RoomDetailsTab = ({
                                 onChange={(e) => {
                                   const file = e.target.files[0];
                                   if (file) {
-                                    const reader = new FileReader();
-                                    reader.onload = (event) => {
-                                      onUpdateRoom(room.id, 'room_image', event.target.result);
-                                    };
-                                    reader.readAsDataURL(file);
+                                    // cleanup existing preview
+                                    if (room.room_image_preview) {
+                                      try { URL.revokeObjectURL(room.room_image_preview); } catch (_) {}
+                                    }
+                                    onUpdateRoom(room.id, 'room_image', file);
+                                    const previewUrl = URL.createObjectURL(file);
+                                    onUpdateRoom(room.id, 'room_image_preview', previewUrl);
                                   }
                                 }}
                               />

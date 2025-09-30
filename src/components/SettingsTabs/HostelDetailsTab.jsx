@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Building, Image, Upload, X } from 'lucide-react';
 import SearchableSelect from '../Common/SearchableSelect';
-import { API_ENDPOINTS } from '../../config/api';
+import { API_ENDPOINTS, getApiUrl } from '../../config/api';
 import './SettingsTabs.css';
 
-const HostelDetailsTab = ({ 
-  hostelDetails, 
-  onHostelDetailsChange, 
-  onLogoUpload 
+const HostelDetailsTab = ({
+  hostelDetails,
+  onHostelDetailsChange,
+  onLogoUpload
 }) => {
   const [campusOptions, setCampusOptions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -40,20 +40,20 @@ const HostelDetailsTab = ({
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
-      const response = await fetch(API_ENDPOINTS.CAMPUS_SEARCH, {
+
+      const response = await fetch(getApiUrl(API_ENDPOINTS.CAMPUS_SEARCH), {
         method: 'GET',
         headers: {
           'Authorization': `Token ${token}`,
           'Content-Type': 'application/json',
         },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setCampusOptions(data);
         setAllCampusData(data);
-        
+
         // Cache the data in localStorage
         localStorage.setItem('campusOptions', JSON.stringify(data));
         localStorage.setItem('campusOptionsTimestamp', Date.now().toString());
@@ -120,14 +120,14 @@ const HostelDetailsTab = ({
           <div className="form-group">
             <label className="form-label">Hostel Cover Image *</label>
             <div className="cover-image-upload">
-              {hostelDetails.logo ? (
+              {hostelDetails.logo || hostelDetails.logoPreview ? (
                 <div className="cover-image-preview-container">
-                  <img 
-                    src={typeof hostelDetails.logo === 'string' 
-                      ? hostelDetails.logo
-                      : URL.createObjectURL(hostelDetails.logo)
-                    } 
-                    alt="Hostel cover preview" 
+                  <img
+                    src={hostelDetails.logoPreview
+                      ? hostelDetails.logoPreview
+                      : (typeof hostelDetails.logo === 'string' ? hostelDetails.logo : '')
+                    }
+                    alt="Hostel cover preview"
                     className="cover-image-preview"
                   />
                   <div className="cover-image-overlay">
@@ -142,7 +142,17 @@ const HostelDetailsTab = ({
                     <button
                       type="button"
                       className="cover-image-remove-btn"
-                      onClick={() => onHostelDetailsChange('logo', '')}
+                      onClick={() => {
+                        // Revoke preview URL if exists
+                        if (hostelDetails.logoPreview) {
+                          try { URL.revokeObjectURL(hostelDetails.logoPreview); } catch (_) {}
+                        }
+                        onHostelDetailsChange('logo', null);
+                        onHostelDetailsChange('logoPreview', '');
+                        // Reset the file input value to allow re-uploading the same file
+                        const input = document.getElementById('cover-image-upload');
+                        if (input) input.value = '';
+                      }}
                     >
                       <X size={16} />
                     </button>
@@ -167,11 +177,15 @@ const HostelDetailsTab = ({
                 onChange={(e) => {
                   const file = e.target.files[0];
                   if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                      onHostelDetailsChange('logo', event.target.result);
-                    };
-                    reader.readAsDataURL(file);
+                    // Clean up any existing preview URL
+                    if (hostelDetails.logoPreview) {
+                      try { URL.revokeObjectURL(hostelDetails.logoPreview); } catch (_) {}
+                    }
+                    // Pass the file to your backend
+                    onHostelDetailsChange('logo', file);
+                    // For preview only
+                    const previewUrl = URL.createObjectURL(file);
+                    onHostelDetailsChange('logoPreview', previewUrl);
                   }
                 }}
               />
